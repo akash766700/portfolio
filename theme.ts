@@ -6,9 +6,17 @@ const theme = createTheme({
     fontFamily: "var(--font-geist-sans), sans-serif",
   },
   palette: {
-    mode: "light",
+    mode: "dark",
+    background: {
+      default: "#0A0A0C",
+      paper: "#121216",
+    },
     primary: {
-      main: "#2563eb",
+      main: "#FFFFFF",
+    },
+    text: {
+      primary: "#FFFFFF",
+      secondary: "#9E9EA7",
     },
   },
 });
