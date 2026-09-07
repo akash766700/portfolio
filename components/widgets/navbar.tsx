@@ -8,6 +8,7 @@ import {
 } from "@mui/icons-material";
 import { PORTFOLIO_DATA } from "@/assets/generic-data";
 import { gsap } from "@/utils/gsap";
+import { Colors } from "@/utils/enum";
 
 const MENU_ITEMS = [
   { label: "Home", href: "#hero" },
@@ -31,7 +32,6 @@ export const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // GSAP Cinematic Entrance & Exit Timeline
   useEffect(() => {
     if (!drawerRef.current) return;
 
@@ -423,36 +423,46 @@ export const Navbar = () => {
                 />
               </Box>
 
-              {/* Massive 2-line bottom typography with typewriter slide effect */}
-              <Box sx={{ mt: "auto", pt: 4, overflow: "hidden" }}>
+              {/* Elegant Flowing Signature with typewriter slide effect */}
+              <Box sx={{ mt: "auto", pt: 6, pb: 4, overflow: "visible" }}>
                 <Typography
                   className="nav-giant-title"
                   sx={{
-                    fontFamily: "var(--font-geist-sans), sans-serif",
-                    fontWeight: 900,
+                    fontFamily: "var(--font-waterfall), cursive",
+                    fontWeight: 400,
                     fontSize: {
-                      xs: "3.2rem",
-                      sm: "4.8rem",
-                      md: "5.8rem",
-                      lg: "7rem",
+                      xs: "2.6rem",
+                      sm: "3.6rem",
+                      md: "4.4rem",
+                      lg: "5.4rem",
                     },
-                    lineHeight: 0.9,
-                    letterSpacing: "-0.03em",
-                    textTransform: "uppercase",
-                    color: "#FFFFFF",
+                    lineHeight: 1,
+                    letterSpacing: "0.02em",
+                    textTransform: "none",
+                    color: Colors.HEADING,
                     userSelect: "none",
+                    transform: "rotate(-13deg)",
+                    transformOrigin: "left center",
+                    display: "inline-block",
                   }}
                 >
-                  <Box component="span" sx={{ display: "block" }}>
-                    {Array.from("AKASH").map((char, i) => (
+                  {/* Row 1: Akash */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      lineHeight: 0.9,
+                    }}
+                  >
+                    {Array.from("Akash").map((char, i) => (
                       <Box
-                        key={`l1-${i}`}
+                        key={`sig-a-${i}`}
                         component="span"
                         className="nav-name-char"
                         sx={{
                           display: "inline-block",
                           opacity: 0,
-                          transform: "translateX(-20px)",
+                          transform: "translateX(-16px)",
                           willChange: "transform, opacity",
                         }}
                       >
@@ -460,16 +470,40 @@ export const Navbar = () => {
                       </Box>
                     ))}
                   </Box>
-                  <Box component="span" sx={{ display: "block" }}>
-                    {Array.from("GUPTA.").map((char, i) => (
+
+                  {/* Row 2: Gupta (Directly BELOW on next line, close to 'h') */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      lineHeight: 0.9,
+                      mt: "-0.2em",
+                    }}
+                  >
+                    {/* Invisible spacer matching exact width of 'Akas' */}
+                    <Box
+                      component="span"
+                      aria-hidden="true"
+                      sx={{
+                        visibility: "hidden",
+                        display: "inline-block",
+                        userSelect: "none",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      Akas
+                    </Box>
+
+                    {/* Gupta letters starting under 'h' */}
+                    {Array.from("Gupta").map((char, i) => (
                       <Box
-                        key={`l2-${i}`}
+                        key={`sig-g-${i}`}
                         component="span"
                         className="nav-name-char"
                         sx={{
                           display: "inline-block",
                           opacity: 0,
-                          transform: "translateX(-20px)",
+                          transform: "translateX(-16px)",
                           willChange: "transform, opacity",
                         }}
                       >
