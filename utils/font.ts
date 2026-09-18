@@ -12,6 +12,12 @@ export const titilliumWeb = localFont({
   display: "swap",
 });
 
+export const scienceGothic = localFont({
+  src: "../assets/fonts/ScienceGothic-Regular.ttf",
+  variable: "--font-science-gothic",
+  display: "swap",
+});
+
 export const waterfall = localFont({
   src: "../assets/fonts/Waterfall-Regular.ttf",
   variable: "--font-waterfall",

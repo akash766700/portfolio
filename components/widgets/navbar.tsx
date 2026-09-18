@@ -426,6 +426,7 @@ export const Navbar = () => {
               {/* Elegant Flowing Signature with typewriter slide effect */}
               <Box sx={{ mt: "auto", pt: 6, pb: 4, overflow: "visible" }}>
                 <Typography
+                  component="div"
                   className="nav-giant-title"
                   sx={{
                     fontFamily: "var(--font-waterfall), cursive",

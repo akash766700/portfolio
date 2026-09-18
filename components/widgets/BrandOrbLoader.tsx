@@ -9,277 +9,552 @@ interface BrandOrbLoaderProps {
   isExiting?: boolean;
 }
 
-export default function BrandOrbLoader({
-  onComplete,
-  isExiting = false,
-}: BrandOrbLoaderProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [progress, setProgress] = useState(0);
+interface DecryptedTextProps {
+  text: string;
+  revealDuration?: number;
+  characters?: string;
+  sx?: any;
+  hoverEffect?: boolean;
+}
+
+// ── Ultra-Smooth Decrypted Text (Direct DOM Mutation, Throttled Hacker Rhythm, 60fps) ──
+function DecryptedText({
+  text,
+  revealDuration = 1400,
+  characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*<>~",
+  sx,
+  hoverEffect = true,
+}: DecryptedTextProps) {
+  const elRef = useRef<HTMLDivElement | null>(null);
   const animFrameId = useRef<number | null>(null);
-  const completedCalled = useRef(false);
+  const [isHovered, setIsHovered] = useState(false);
 
-  const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  const startDecryption = () => {
+    if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
+    if (!elRef.current) return;
 
-  // Counter animation - runs smoothly on mount
-  useEffect(() => {
-    let current = 0;
-    const interval = setInterval(() => {
-      // Smooth increment towards 100
-      const increment = Math.max(1, Math.floor((100 - current) * 0.14));
-      current += increment;
-      if (current >= 100) {
-        current = 100;
-        setProgress(100);
-        clearInterval(interval);
-        if (!completedCalled.current) {
-          completedCalled.current = true;
-          setTimeout(() => {
-            onCompleteRef.current?.();
-          }, 350);
+    const el = elRef.current;
+    const totalChars = text.length;
+    let startTime: number | null = null;
+    let lastShuffle = 0;
+    let cachedRandom = "";
+
+    const frame = (now: number) => {
+      if (startTime === null) startTime = now;
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / revealDuration);
+      const revealedLength = Math.floor(progress * totalChars);
+
+      // Throttle random glyph update to every 38ms for distinct, clean cyber rhythm
+      if (now - lastShuffle > 38 || !cachedRandom) {
+        lastShuffle = now;
+        let rand = "";
+        for (let j = 0; j < totalChars; j++) {
+          rand += characters[Math.floor(Math.random() * characters.length)];
         }
-      } else {
-        setProgress(current);
+        cachedRandom = rand;
       }
-    }, 35);
 
-    return () => clearInterval(interval);
-  }, []);
+      let output = "";
+      for (let i = 0; i < totalChars; i++) {
+        if (text[i] === " ") {
+          output += " ";
+        } else if (i < revealedLength) {
+          output += text[i];
+        } else {
+          output += cachedRandom[i] || characters[0];
+        }
+      }
 
+      el.textContent = output;
 
-  // Canvas 2D React Atom Orb Renderer
+      if (progress < 1) {
+        animFrameId.current = requestAnimationFrame(frame);
+      } else {
+        el.textContent = text;
+      }
+    };
+
+    animFrameId.current = requestAnimationFrame(frame);
+  };
+
   useEffect(() => {
+    startDecryption();
+    return () => {
+      if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
+    };
+  }, [text]);
+
+  return (
+    <Box
+      ref={elRef}
+      onMouseEnter={() => {
+        if (hoverEffect) {
+          setIsHovered(true);
+          startDecryption();
+        }
+      }}
+      onMouseLeave={() => setIsHovered(false)}
+      sx={{
+        cursor: hoverEffect ? "pointer" : "default",
+        userSelect: "none",
+        transition: "transform 0.3s ease, filter 0.3s ease",
+        display: "inline-block",
+        ...sx,
+        ...(isHovered && {
+          filter:
+            "brightness(1.35) drop-shadow(0 0 16px rgba(97, 218, 251, 0.75))",
+          transform: "scale(1.035)",
+        }),
+      }}
+    >
+      {text}
+    </Box>
+  );
+}
+
+// ── Compact, Instant & Continuous Delta-Time Orbiting React Atom Canvas (Zero-GC, 60fps Locked) ──
+function ReactAtomCanvas({ size = 145, isExiting = false }: { size?: number; isExiting?: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    if (isExiting) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    let width = (canvas.width = 360);
-    let height = (canvas.height = 360);
+    const dpr =
+      typeof window !== "undefined"
+        ? Math.min(window.devicePixelRatio || 1, 2)
+        : 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    ctx.scale(dpr, dpr);
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const rx = size * 0.38;
+    const ry = size * 0.14;
+
+    // ── Pre-render static ambient glow offscreen (Zero GC per frame) ──
+    const ambientCanvas = document.createElement("canvas");
+    ambientCanvas.width = size * dpr;
+    ambientCanvas.height = size * dpr;
+    const ambCtx = ambientCanvas.getContext("2d");
+    if (ambCtx) {
+      ambCtx.scale(dpr, dpr);
+      const ambient = ambCtx.createRadialGradient(
+        cx,
+        cy,
+        4,
+        cx,
+        cy,
+        size * 0.44
+      );
+      ambient.addColorStop(0, "rgba(97, 218, 251, 0.45)");
+      ambient.addColorStop(0.4, "rgba(97, 218, 251, 0.12)");
+      ambient.addColorStop(1, "rgba(10, 10, 12, 0)");
+      ambCtx.fillStyle = ambient;
+      ambCtx.beginPath();
+      ambCtx.arc(cx, cy, size * 0.44, 0, Math.PI * 2);
+      ambCtx.fill();
+    }
+
+    // ── Pre-render electron ball sprite offscreen (Zero GC per frame) ──
+    const eSize = 24;
+    const electronCanvas = document.createElement("canvas");
+    electronCanvas.width = eSize * dpr;
+    electronCanvas.height = eSize * dpr;
+    const eCtx = electronCanvas.getContext("2d");
+    if (eCtx) {
+      eCtx.scale(dpr, dpr);
+      const ecx = eSize / 2;
+      const ecy = eSize / 2;
+      const eGlow = eCtx.createRadialGradient(ecx, ecy, 0, ecx, ecy, 8);
+      eGlow.addColorStop(0, "#FFFFFF");
+      eGlow.addColorStop(0.5, "#61DAFB");
+      eGlow.addColorStop(1, "rgba(97, 218, 251, 0)");
+      eCtx.fillStyle = eGlow;
+      eCtx.beginPath();
+      eCtx.arc(ecx, ecy, 8, 0, Math.PI * 2);
+      eCtx.fill();
+
+      // Sharp white nucleus core of electron
+      eCtx.fillStyle = "#FFFFFF";
+      eCtx.beginPath();
+      eCtx.arc(ecx, ecy, 2.2, 0, Math.PI * 2);
+      eCtx.fill();
+    }
+
+    // ── Pre-create static nucleus radial gradient ──
+    const nucleusGrad = ctx.createRadialGradient(
+      cx,
+      cy,
+      0,
+      cx,
+      cy,
+      size * 0.08
+    );
+    nucleusGrad.addColorStop(0, "#FFFFFF");
+    nucleusGrad.addColorStop(0.45, "#61DAFB");
+    nucleusGrad.addColorStop(1, "rgba(97, 218, 251, 0)");
 
     let time = 0;
+    let animId: number;
+    let lastTime = performance.now();
+    const angles = [0, Math.PI / 3, (2 * Math.PI) / 3];
 
-    const render = () => {
-      time += 0.035;
-      ctx.clearRect(0, 0, width, height);
+    const render = (now: number) => {
+      const delta = Math.min(32, now - lastTime);
+      lastTime = now;
+      time += delta * 0.0012;
 
-      const cx = width / 2;
-      const cy = height / 2;
-      const rx = 105;
-      const ry = 36;
+      ctx.clearRect(0, 0, size, size);
 
-      // Outer ambient core glow
-      const radialGlow = ctx.createRadialGradient(cx, cy, 5, cx, cy, 140);
-      radialGlow.addColorStop(0, "rgba(97, 218, 251, 0.45)");
-      radialGlow.addColorStop(0.3, "rgba(97, 218, 251, 0.15)");
-      radialGlow.addColorStop(0.7, "rgba(225, 220, 201, 0.05)");
-      radialGlow.addColorStop(1, "rgba(10, 10, 12, 0)");
-      ctx.fillStyle = radialGlow;
+      // 1. Draw cached ambient glow (0 allocations)
+      ctx.drawImage(ambientCanvas, 0, 0, size, size);
+
+      // 2. Nucleus core with breathing pulse (0 allocations)
+      const coreR = size * 0.068 + Math.sin(time * 2.2) * 1.2;
+      ctx.fillStyle = nucleusGrad;
       ctx.beginPath();
-      ctx.arc(cx, cy, 140, 0, Math.PI * 2);
+      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
       ctx.fill();
 
-      // Core nucleus sphere
-      const coreGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 18);
-      coreGlow.addColorStop(0, "#FFFFFF");
-      coreGlow.addColorStop(0.4, "#61DAFB");
-      coreGlow.addColorStop(1, "rgba(97, 218, 251, 0)");
-      ctx.fillStyle = coreGlow;
+      // Sharp white center spark
+      ctx.fillStyle = "#FFFFFF";
       ctx.beginPath();
-      ctx.arc(cx, cy, 18 + Math.sin(time * 3) * 2.5, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 2, 0, Math.PI * 2);
       ctx.fill();
 
-      // 3 React Atom Ellipses (0°, 60°, 120°)
-      const angles = [0, Math.PI / 3, (2 * Math.PI) / 3];
-
+      // 3. Three React atom orbital rings with cached orbiting electron sprites
       angles.forEach((angle, idx) => {
         ctx.save();
         ctx.translate(cx, cy);
-        ctx.rotate(angle + Math.sin(time * 0.4 + idx) * 0.05);
+        ctx.rotate(angle + Math.sin(time * 0.35 + idx) * 0.035);
 
-        // Ellipse path
+        // Ellipse ring
         ctx.beginPath();
         ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(97, 218, 251, 0.38)";
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "rgba(97, 218, 251, 0.55)";
+        ctx.lineWidth = 1.4;
         ctx.stroke();
 
-        // High-energy rim shimmer
+        // Inner rim
         ctx.beginPath();
         ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-        ctx.lineWidth = 0.75;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.lineWidth = 0.7;
         ctx.stroke();
 
-        // Orbiting electron beads
-        const electronT = time * 1.8 + idx * ((Math.PI * 2) / 3);
+        // ── ORBITING BALL (ELECTRON) ──
+        // Graceful, calm orbital speed (0.95) & zero allocations
+        const electronT = time * 0.95 + idx * ((Math.PI * 2) / 3);
         const ex = rx * Math.cos(electronT);
         const ey = ry * Math.sin(electronT);
 
-        // Electron glow
-        const eGlow = ctx.createRadialGradient(ex, ey, 0, ex, ey, 10);
-        eGlow.addColorStop(0, "#FFFFFF");
-        eGlow.addColorStop(0.4, "#61DAFB");
-        eGlow.addColorStop(1, "rgba(97, 218, 251, 0)");
-        ctx.fillStyle = eGlow;
-        ctx.beginPath();
-        ctx.arc(ex, ey, 10, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Electron sharp core
-        ctx.fillStyle = "#FFFFFF";
-        ctx.beginPath();
-        ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.drawImage(electronCanvas, ex - 12, ey - 12, 24, 24);
 
         ctx.restore();
       });
 
-      animFrameId.current = requestAnimationFrame(render);
+      animId = requestAnimationFrame(render);
     };
 
-    render();
+    animId = requestAnimationFrame(render);
 
-    return () => {
-      if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
+    return () => cancelAnimationFrame(animId);
+  }, [size, isExiting]);
+
+  return (
+    <Box
+      sx={{
+        width: size,
+        height: size,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        filter: "drop-shadow(0 0 25px rgba(97, 218, 251, 0.5))",
+        pointerEvents: "none",
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          display: "block",
+        }}
+      />
+    </Box>
+  );
+}
+
+export default function BrandOrbLoader({
+  onComplete,
+  isExiting = false,
+}: BrandOrbLoaderProps) {
+  const lineRef = useRef<HTMLDivElement | null>(null);
+  const counterRef = useRef<HTMLSpanElement | null>(null);
+
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const completedFired = useRef(false);
+
+  // ── 5.4s Luxury Progress Loop (Continuous Subpixel Updates, Zero Hitching) ──
+  useEffect(() => {
+    let startTime: number | null = null;
+    const duration = 5400; // ms
+    let frameId: number;
+    let lastIntVal = -1;
+
+    const step = (now: number) => {
+      if (startTime === null) startTime = now;
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / duration);
+
+      // Liquid smooth sine easing (starts like water, glides smoothly to 100)
+      const ease = 0.5 - 0.5 * Math.cos(t * Math.PI);
+
+      // Continuous subpixel progress line (glides at 60fps/120fps without discrete percent jumping)
+      const continuousPercent = Math.min(100, ease * 100);
+      if (lineRef.current) {
+        lineRef.current.style.width = `${continuousPercent.toFixed(2)}%`;
+      }
+
+      // Counter and phase updates throttled to integer transitions
+      const current = Math.min(100, Math.floor(continuousPercent));
+      if (current !== lastIntVal) {
+        lastIntVal = current;
+        const formatted =
+          current < 10 ? `00${current}` : current < 100 ? `0${current}` : "100";
+
+        if (counterRef.current) {
+          counterRef.current.textContent = formatted;
+        }
+      }
+
+      if (t < 1) {
+        frameId = requestAnimationFrame(step);
+      } else {
+        if (!completedFired.current) {
+          completedFired.current = true;
+          setTimeout(() => {
+            onCompleteRef.current?.();
+          }, 350);
+        }
+      }
     };
+
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
   }, []);
 
   return (
     <Box
-      id="brand-orb-loader"
+      id="brand-curtain-loader"
       sx={{
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        backgroundColor: Colors.BACKGROUND,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
         pointerEvents: isExiting ? "none" : "auto",
-        transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
-        opacity: isExiting ? 0 : 1,
-        transform: isExiting ? "scale(1.08)" : "scale(1)",
+        overflow: "hidden",
+        backgroundColor: "transparent",
       }}
     >
-      {/* Background subtle radial gradient */}
+      {/* ════════ TOP CURTAIN PANEL ════════ */}
       <Box
         sx={{
           position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(circle at 50% 50%, rgba(97, 218, 251, 0.06) 0%, rgba(10, 10, 12, 0) 65%)",
-          pointerEvents: "none",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "50%",
+          backgroundColor: "#070709",
+          transform: isExiting ? "translateY(-101%)" : "translateY(0%)",
+          transition: "transform 0.85s cubic-bezier(0.85, 0, 0.15, 1)",
+          willChange: "transform",
         }}
       />
 
-      {/* Center 2D React Atom Canvas */}
+      {/* ════════ BOTTOM CURTAIN PANEL ════════ */}
       <Box
-        id="orb-canvas-container"
         sx={{
-          position: "relative",
-          width: 280,
-          height: 280,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
-          transform: isExiting ? "scale(0.85)" : "scale(1)",
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "50%",
+          backgroundColor: "#070709",
+          transform: isExiting ? "translateY(101%)" : "translateY(0%)",
+          transition: "transform 0.85s cubic-bezier(0.85, 0, 0.15, 1)",
+          willChange: "transform",
+        }}
+      />
+
+      {/* ════════ BOTTOM HORIZONTAL LASER PROGRESS LINE ════════ */}
+      <Box
+        ref={lineRef}
+        sx={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          width: "0%",
+          height: "2.5px",
+          zIndex: 10,
+          background:
+            "linear-gradient(90deg, rgba(97, 218, 251, 0.1) 0%, #61DAFB 60%, #CEF2A8 90%, #FFFFFF 100%)",
+          boxShadow:
+            "0 0 16px rgba(97, 218, 251, 0.9), 0 0 32px rgba(206, 242, 168, 0.5)",
+          opacity: isExiting ? 0 : 1,
+          transition: "opacity 0.25s ease",
+          pointerEvents: "none",
+          willChange: "width",
         }}
       >
-        <canvas
-          ref={canvasRef}
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "block",
-            filter: "drop-shadow(0 0 24px rgba(97, 218, 251, 0.35))",
+        {/* Leading glowing laser head dot */}
+        <Box
+          sx={{
+            position: "absolute",
+            right: 0,
+            top: "50%",
+            transform: "translate(50%, -50%)",
+            width: 7,
+            height: 7,
+            borderRadius: "50%",
+            backgroundColor: "#FFFFFF",
+            boxShadow:
+              "0 0 10px 2px rgba(97, 218, 251, 1), 0 0 20px 4px rgba(206, 242, 168, 0.6)",
           }}
         />
       </Box>
 
-      {/* Typography & Counter */}
+      {/* ════════ CONTENT LAYER ════════ */}
       <Box
         sx={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 3,
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          gap: 1.2,
-          mt: 2,
-          zIndex: 2,
+          justifyContent: "space-between",
+          p: { xs: 3, sm: 4, md: 5 },
+          opacity: isExiting ? 0 : 1,
+          transition: "opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          pointerEvents: "none",
+          userSelect: "none",
         }}
       >
-        {/* Name */}
-        <Typography
-          variant="h6"
-          sx={{
-            color: Colors.WHITE,
-            fontSize: { xs: "0.95rem", sm: "1.1rem" },
-            fontWeight: 600,
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            fontFamily: "var(--font-titillium-web), sans-serif",
-          }}
-        >
-          Akash Gupta
-        </Typography>
+        {/* Empty top spacer */}
+        <Box />
 
-        {/* Role: strictly Frontend Developer */}
-        <Typography
-          variant="caption"
-          sx={{
-            color: Colors.HEADING,
-            fontSize: "0.75rem",
-            fontWeight: 500,
-            letterSpacing: "0.38em",
-            textTransform: "uppercase",
-            opacity: 0.85,
-          }}
-        >
-          Frontend Developer
-        </Typography>
-
-        {/* Counter */}
+        {/* ── CENTER: COMPACT REACT ATOM + SLEEK NAME + ROLE ── */}
         <Box
           sx={{
-            display: "inline-flex",
+            display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: 1,
-            mt: 1.5,
-            px: 2,
-            py: 0.6,
-            borderRadius: "999px",
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
+            textAlign: "center",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 5,
+            pointerEvents: "auto",
+            width: "max-content",
           }}
         >
-          <Box
+          {/* Orbiting React Atom with continuously rotating electron balls */}
+          <Box sx={{ mb: { xs: 1.5, md: 2 } }}>
+            <ReactAtomCanvas size={145} isExiting={isExiting} />
+          </Box>
+
+          {/* User Name with Sleek Compact Typography (Science Gothic) */}
+          <DecryptedText
+            text="Akash Gupta"
+            revealDuration={1300}
             sx={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              backgroundColor: "#61DAFB",
-              boxShadow: "0 0 8px #61DAFB",
-              animation: "pulse 1.4s ease-in-out infinite",
-              "@keyframes pulse": {
-                "0%, 100%": { opacity: 0.4, transform: "scale(0.8)" },
-                "50%": { opacity: 1, transform: "scale(1.2)" },
-              },
+              fontFamily: "var(--font-science-gothic), sans-serif",
+              fontSize: { xs: "1.125rem", sm: "1.375rem", md: "1.625rem" },
+              fontWeight: 700,
+              lineHeight: 1.15,
+              letterSpacing: { xs: "0.2em", md: "0.24em" },
+              textTransform: "uppercase",
+              color: Colors.WHITE,
+              textShadow: "0 0 25px rgba(97, 218, 251, 0.25)",
             }}
           />
-          <Typography
+
+          {/* Profile / Role (Waterfall font) */}
+          <DecryptedText
+            text="Frontend Developer"
+            revealDuration={1500}
+            characters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~*&"
             sx={{
-              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              fontSize: "0.85rem",
-              fontWeight: 500,
-              color: Colors.HEADING,
-              letterSpacing: "0.15em",
+              fontFamily: "var(--font-waterfall), cursive",
+              fontSize: { xs: "1.35rem", sm: "1.55rem", md: "1.8rem" },
+              fontWeight: 400,
+              lineHeight: 1.1,
+              letterSpacing: "0.03em",
+              color: "#61DAFB",
+              mt: 0.3,
+              textShadow: "0 0 18px rgba(97, 218, 251, 0.45)",
+            }}
+          />
+        </Box>
+
+        {/* ── BOTTOM ROW: COMPACT REFINED PERCENTAGE COUNTER ── */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "flex-end",
+            width: "100%",
+            pb: 1.2,
+          }}
+        >
+          {/* Compact Refined Percentage Counter */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 0.5,
+              ml: "auto",
             }}
           >
-            {progress.toString().padStart(3, "0")}%
-          </Typography>
+            <Typography
+              component="span"
+              ref={counterRef}
+              sx={{
+                fontFamily: "var(--font-titillium-web), sans-serif",
+                fontSize: { xs: "1.8rem", sm: "2.3rem", md: "2.8rem" },
+                fontWeight: 300,
+                lineHeight: 1,
+                letterSpacing: "-0.02em",
+                color: Colors.WHITE,
+                textShadow: "0 0 30px rgba(255, 255, 255, 0.15)",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              000
+            </Typography>
+            <Typography
+              component="span"
+              sx={{
+                fontFamily: "var(--font-geist-mono), monospace",
+                fontSize: { xs: "0.85rem", sm: "1rem", md: "1.15rem" },
+                fontWeight: 400,
+                color: "#61DAFB",
+                textShadow: "0 0 15px rgba(97, 218, 251, 0.4)",
+                lineHeight: 1,
+              }}
+            >
+              %
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Box>

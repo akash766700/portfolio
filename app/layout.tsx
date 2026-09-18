@@ -4,7 +4,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import theme from "@/theme";
-import { smoochSans, titilliumWeb, waterfall } from "@/utils/font";
+import { scienceGothic, smoochSans, titilliumWeb, waterfall } from "@/utils/font";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,9 +26,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${smoochSans.variable} ${titilliumWeb.variable} ${waterfall.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${scienceGothic.variable} ${smoochSans.variable} ${titilliumWeb.variable} ${waterfall.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <link
+          rel="preload"
+          href="/models/crystal_spider.glb"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body suppressHydrationWarning>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>

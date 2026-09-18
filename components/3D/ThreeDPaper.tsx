@@ -33,24 +33,12 @@ export function ThreeDPaper({
   className = "",
   style,
 }: ThreeDPaperProps) {
-  const [htmlContent, setHtmlContent] = useState<string>("");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    // Fetch fresh HTML content with cache-buster to completely bypass browser disk cache
-    fetch(`${URLS[variant]}?t=${Date.now()}`)
-      .then((res) => res.text())
-      .then((html) => {
-        if (active) {
-          setHtmlContent(html);
-        }
-      })
-      .catch((err) => console.error("Failed to load 3d paper source:", err));
-
-    return () => {
-      active = false;
-    };
+    // Safety fallback to guarantee visibility
+    const timer = setTimeout(() => setReady(true), 600);
+    return () => clearTimeout(timer);
   }, [variant]);
 
   return (
@@ -68,29 +56,27 @@ export function ThreeDPaper({
         ...style,
       }}
     >
-      {htmlContent ? (
-        <iframe
-          title={TITLES[variant]}
-          srcDoc={htmlContent}
-          sandbox="allow-scripts allow-same-origin"
-          loading="eager"
-          onLoad={() => setReady(true)}
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "block",
-            width: "100%",
-            height: "100%",
-            border: 0,
-            background: "transparent",
-            backgroundColor: "transparent",
-            colorScheme: "dark",
-            opacity: ready ? 1 : 0,
-            pointerEvents: "auto",
-            transition: "opacity 300ms ease-out",
-          }}
-        />
-      ) : null}
+      <iframe
+        title={TITLES[variant]}
+        src={URLS[variant]}
+        sandbox="allow-scripts allow-same-origin"
+        loading="eager"
+        onLoad={() => setReady(true)}
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "block",
+          width: "100%",
+          height: "100%",
+          border: 0,
+          background: "transparent",
+          backgroundColor: "transparent",
+          colorScheme: "dark",
+          opacity: ready ? 1 : 0,
+          pointerEvents: "auto",
+          transition: "opacity 300ms ease-out",
+        }}
+      />
     </div>
   );
 }

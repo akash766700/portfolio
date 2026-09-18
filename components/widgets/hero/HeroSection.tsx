@@ -4,62 +4,82 @@ import React, { useState, useEffect } from "react";
 import { Box, Typography, Container } from "@mui/material";
 import { Colors } from "@/utils/enum";
 import { SpiderHeroScene } from "@/components/3D";
-import PaperCard from "./PaperCard";
 import LiquidButton from "./LiquidButton";
 import BrandOrbLoader from "@/components/widgets/BrandOrbLoader";
+import HeroSparkles from "./HeroSparkles";
 
-export type IntroStage = "loader" | "two-cards" | "spider-huge" | "hero-settle";
+export type IntroStage =
+  | "loader"
+  | "spider-zoom"
+  | "spider-drop"
+  | "hero-settle";
 
 interface HeroSectionProps {
   onStageChange?: (stage: IntroStage) => void;
 }
 
 export default function HeroSection({ onStageChange }: HeroSectionProps) {
-  // Sequence: "loader" -> "two-cards" -> "spider-huge" -> "hero-settle"
+  // Sequence: "loader" -> "spider-zoom" (immediate slow-mo fall & recede, 3.8s) -> "spider-drop" (2.6s) -> "hero-settle"
   const [stage, setStage] = useState<IntroStage>("loader");
   const [loaderMounted, setLoaderMounted] = useState(true);
+  const [quantumFlash, setQuantumFlash] = useState(false);
 
   // Notify parent of stage changes
   useEffect(() => {
     onStageChange?.(stage);
   }, [stage, onStageChange]);
 
-  // Handle stage transitions
+  // Stage timer choreography: Shutter opens -> immediate slow-mo falling backward into cosmos
   useEffect(() => {
-    if (stage === "two-cards") {
-      // Unmount loader after fade out
-      const unmountTimer = setTimeout(() => {
-        setLoaderMounted(false);
-      }, 700);
+    if (stage === "spider-zoom") {
+      // Trigger singularity implosion flash near the end of the slow-mo backward descent
+      const flashTimer = setTimeout(() => {
+        setQuantumFlash(true);
+      }, 3150);
+      const flashOffTimer = setTimeout(() => {
+        setQuantumFlash(false);
+      }, 3650);
 
-      // Show the 2 cards for ~1.4s, then spider emerges and zooms HUGE
-      const hugeTimer = setTimeout(() => {
-        setStage("spider-huge");
-      }, 1500);
-
+      // Gracefully transitions to hero drop from ceiling
+      const zoomTimer = setTimeout(() => {
+        setStage("spider-drop");
+      }, 3800);
       return () => {
-        clearTimeout(unmountTimer);
-        clearTimeout(hugeTimer);
+        clearTimeout(flashTimer);
+        clearTimeout(flashOffTimer);
+        clearTimeout(zoomTimer);
       };
     }
 
-    if (stage === "spider-huge") {
-      // Spider stays huge for ~1.5s, then scales down and settles into hero
-      const settleTimer = setTimeout(() => {
+    if (stage === "spider-drop") {
+      // Spider visibly descends from the top of the screen on the glistening silk thread
+      const dropTimer = setTimeout(() => {
         setStage("hero-settle");
-      }, 1500);
-
-      return () => clearTimeout(settleTimer);
+      }, 2600);
+      return () => clearTimeout(dropTimer);
     }
   }, [stage]);
 
+  // Eagerly preload spider 3D model on initial mount while brand loader is running
+  useEffect(() => {
+    import("@/components/3D/SpiderHeroScene").then((mod) => {
+      mod.preloadSpiderModel?.();
+    });
+  }, []);
+
   const handleLoaderComplete = () => {
-    setStage("two-cards");
+    // Transition immediately to fullscreen slow-mo backward fall
+    setStage("spider-zoom");
+
+    // Unmount loader after split curtain opens
+    setTimeout(() => {
+      setLoaderMounted(false);
+    }, 850);
   };
 
   const isLoader = stage === "loader";
-  const isTwoCards = stage === "two-cards";
-  const isSpiderHuge = stage === "spider-huge";
+  const isIntroPhase = isLoader || stage === "spider-zoom";
+  const isHeroVisible = stage === "spider-drop" || stage === "hero-settle";
   const isHeroSettle = stage === "hero-settle";
 
   return (
@@ -76,21 +96,19 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        pt: { xs: 8, md: 10 },
-        pb: { xs: 6, md: 8 },
+        pt: 0,
+        pb: 0,
         isolation: "isolate",
       }}
     >
-      {/* ── 1. Fullscreen React Orb Loader with Percentage Counter ── */}
+      {/* ── 1. Fullscreen Split-Curtain Awwwards Loader ── */}
       {loaderMounted && (
         <Box
           sx={{
             position: "fixed",
             inset: 0,
             zIndex: 1000,
-            opacity: isLoader ? 1 : 0,
             pointerEvents: isLoader ? "auto" : "none",
-            transition: "opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
           <BrandOrbLoader
@@ -100,7 +118,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         </Box>
       )}
 
-      {/* ── Ambient Lighting Floor ── */}
+      {/* ── Ambient Lighting Floor & Atmospheric Dual Spotlights ── */}
       <Box
         sx={{
           position: "absolute",
@@ -108,14 +126,23 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
           pointerEvents: "none",
           zIndex: 0,
           background: `
-            radial-gradient(55% 45% at 50% 55%, rgba(97, 218, 251, 0.09) 0%, rgba(97, 218, 251, 0) 70%),
-            radial-gradient(60% 40% at 50% 95%, rgba(206, 242, 168, 0.08) 0%, rgba(206, 242, 168, 0) 65%),
-            radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 40%)
+            /* Primary Cyber Spotlight behind spider & right side */
+            radial-gradient(60% 55% at 74% 50%, rgba(97, 218, 251, 0.20) 0%, rgba(97, 218, 251, 0.06) 45%, transparent 75%),
+            /* Secondary Ambient Studio Fill behind left text */
+            radial-gradient(55% 50% at 26% 48%, rgba(97, 218, 251, 0.13) 0%, rgba(206, 242, 168, 0.06) 40%, transparent 70%),
+            /* Continuous Luxury Platform Glow along bottom floor */
+            radial-gradient(80% 35% at 50% 96%, rgba(97, 218, 251, 0.12) 0%, rgba(206, 242, 168, 0.08) 50%, transparent 80%),
+            /* Corner obsidian vignettes */
+            radial-gradient(circle at 10% 15%, rgba(255, 255, 255, 0.02) 0%, transparent 40%),
+            radial-gradient(circle at 90% 15%, rgba(97, 218, 251, 0.04) 0%, transparent 40%)
           `,
-          opacity: isHeroSettle ? 1 : 0.4,
+          opacity: isHeroVisible ? 1 : 0.4,
           transition: "opacity 1.2s ease",
         }}
       />
+
+      {/* ── Full-Hero Floating Cyber Dust Sparkles (Mesmerizing Ambient Stardust) ── */}
+      {isHeroVisible && <HeroSparkles />}
 
       {/* ── Architectural Grid Line Guides (Subtle) ── */}
       <Box
@@ -126,7 +153,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
           zIndex: 1,
           display: "flex",
           justifyContent: "space-around",
-          opacity: isHeroSettle ? 0.035 : 0,
+          opacity: isHeroVisible ? 0.045 : 0,
           transition: "opacity 1.4s ease 0.4s",
         }}
       >
@@ -148,21 +175,21 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
           fontWeight: 800,
           lineHeight: 0.8,
           letterSpacing: "0.08em",
-          color: "rgba(255, 255, 255, 0.022)",
+          color: "rgba(255, 255, 255, 0.025)",
           whiteSpace: "nowrap",
           userSelect: "none",
           pointerEvents: "none",
           zIndex: 1,
-          fontFamily: "var(--font-titillium-web), sans-serif",
+          fontFamily: "var(--font-science-gothic), var(--font-titillium-web), sans-serif",
           transition: "opacity 1.4s ease, transform 1.4s ease",
-          opacity: isHeroSettle ? 1 : 0,
+          opacity: isHeroVisible ? 1 : 0,
         }}
       >
         AKASH GUPTA
       </Typography>
 
-      {/* ── FULLSCREEN SPIDER OVERLAY DURING HUGE ZOOM ── */}
-      {isSpiderHuge && (
+      {/* ── CINEMATIC FULLSCREEN SPIDER INTRO (Immediate Slow-Mo Fall & Recede into Cosmos) ── */}
+      {stage === "spider-zoom" && (
         <Box
           sx={{
             position: "fixed",
@@ -172,89 +199,175 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            animation: "fadeInSpider 0.4s ease-out forwards",
-            "@keyframes fadeInSpider": {
+            animation: "fadeInSpiderScene 0.4s ease-out forwards",
+            "@keyframes fadeInSpiderScene": {
               from: { opacity: 0 },
               to: { opacity: 1 },
             },
           }}
         >
-          {/* Ambient center flare */}
+          {/* Ambient Center Glow (Zero-Blur GPU-Friendly Radial Falloff) */}
           <Box
             sx={{
               position: "absolute",
-              width: "70vw",
-              height: "70vh",
+              width: "85vw",
+              height: "85vh",
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(97, 218, 251, 0.22) 0%, rgba(206, 242, 168, 0.1) 40%, transparent 70%)",
-              filter: "blur(60px)",
+                "radial-gradient(circle, rgba(97, 218, 251, 0.24) 0%, rgba(97, 218, 251, 0.08) 35%, rgba(206, 242, 168, 0.03) 55%, transparent 70%)",
               pointerEvents: "none",
             }}
           />
-          <SpiderHeroScene stage="huge" />
+
+          {/* Anamorphic Cyan Prism Lens Flare Streak */}
+          <Box
+            sx={{
+              position: "absolute",
+              width: "140vw",
+              height: "2px",
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(97, 218, 251, 0.1) 20%, rgba(255, 255, 255, 0.8) 50%, rgba(97, 218, 251, 0.1) 80%, transparent 100%)",
+              transform: "rotate(-12deg)",
+              pointerEvents: "none",
+              opacity: stage === "spider-zoom" ? 0.85 : 0.2,
+              transition: "opacity 1.2s ease",
+              animation: "flareBreathe 3.5s ease-in-out infinite alternate",
+              "@keyframes flareBreathe": {
+                from: { transform: "rotate(-12deg) scaleX(0.85)" },
+                to: { transform: "rotate(-12deg) scaleX(1.1)" },
+              },
+            }}
+          />
+
+          {/* Concentric Quantum Portal Rings (Clean hardware-accelerated borders) */}
+          <Box
+            sx={{
+              position: "absolute",
+              width: { xs: 320, md: 540 },
+              height: { xs: 320, md: 540 },
+              borderRadius: "50%",
+              border: "1px dashed rgba(97, 218, 251, 0.35)",
+              animation: "portalRingRotate 22s linear infinite",
+              pointerEvents: "none",
+              opacity: stage === "spider-zoom" ? 0.75 : 0.15,
+              transition: "opacity 1s ease",
+              "@keyframes portalRingRotate": {
+                from: { transform: "rotate(0deg) scale(0.92)" },
+                "50%": { transform: "rotate(180deg) scale(1.08)" },
+                to: { transform: "rotate(360deg) scale(0.92)" },
+              },
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              width: { xs: 440, md: 720 },
+              height: { xs: 440, md: 720 },
+              borderRadius: "50%",
+              border: "1px solid rgba(206, 242, 168, 0.18)",
+              animation: "portalRingRotateReverse 28s linear infinite",
+              pointerEvents: "none",
+              opacity: stage === "spider-zoom" ? 0.55 : 0.1,
+              transition: "opacity 1s ease",
+              "@keyframes portalRingRotateReverse": {
+                from: { transform: "rotate(360deg) scale(1.05)" },
+                "50%": { transform: "rotate(180deg) scale(0.95)" },
+                to: { transform: "rotate(0deg) scale(1.05)" },
+              },
+            }}
+          />
+
+          {/* Gravitational Shockwave Ripple */}
+          <Box
+            sx={{
+              position: "absolute",
+              width: { xs: 240, md: 420 },
+              height: { xs: 240, md: 420 },
+              borderRadius: "50%",
+              border: "1.5px solid rgba(97, 218, 251, 0.4)",
+              pointerEvents: "none",
+              animation:
+                stage === "spider-zoom"
+                  ? "warpExpand 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite"
+                  : "warpContract 1.3s cubic-bezier(0.7, 0, 0.84, 0) infinite",
+              "@keyframes warpExpand": {
+                "0%": { transform: "scale(0.35)", opacity: 0.9 },
+                "100%": { transform: "scale(1.85)", opacity: 0 },
+              },
+              "@keyframes warpContract": {
+                "0%": { transform: "scale(1.9)", opacity: 0 },
+                "50%": { opacity: 0.8 },
+                "100%": { transform: "scale(0.05)", opacity: 0 },
+              },
+            }}
+          />
         </Box>
       )}
 
-      {/* ── MAIN CONTAINER (Holds 2 Cards & Center Settle Grid) ── */}
+      {/* ── Singularity Implosion Quantum Flash Burst ── */}
+      {quantumFlash && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 90,
+            pointerEvents: "none",
+            background:
+              "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.95) 0%, rgba(97, 218, 251, 0.65) 20%, rgba(97, 218, 251, 0.15) 50%, transparent 75%)",
+            animation: "quantumFlashAnim 0.42s cubic-bezier(0.12, 0.8, 0.32, 1) forwards",
+            "@keyframes quantumFlashAnim": {
+              "0%": { opacity: 0, transform: "scale(0.85)" },
+              "35%": { opacity: 1, transform: "scale(1.08)" },
+              "100%": { opacity: 0, transform: "scale(1.3)" },
+            },
+          }}
+        />
+      )}
+
+      {/* ── MAIN CONTAINER (Hero Content & Dropping Spider) ── */}
       <Container
         maxWidth="xl"
         sx={{
           position: "relative",
-          zIndex: 3,
-          height: "100%",
+          zIndex: 4,
+          minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          opacity: isLoader ? 0 : 1,
-          transition: "opacity 0.6s ease",
+          pt: { xs: 10, md: 0 },
+          pb: { xs: 6, md: 0 },
+          opacity: isHeroVisible ? 1 : 0,
+          transition: "opacity 0.5s ease",
+          pointerEvents: "none",
         }}
       >
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "1.1fr 1.2fr 1fr" },
+            gridTemplateColumns: { xs: "1fr", md: "1.1fr 0.9fr" },
             alignItems: "center",
-            gap: { xs: 4, md: 3, lg: 3 },
-            minHeight: { xs: "auto", md: "82vh" },
+            gap: { xs: 4, md: 6 },
+            width: "100%",
+            minHeight: { xs: "auto", md: "85vh" },
           }}
         >
-          {/* ════════════ LEFT COLUMN: Copy & Left 3D Paper ════════════ */}
+          {/* ════════════ LEFT COLUMN: Copy & CTA ════════════ */}
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: 2.5,
+              gap: 2.4,
               zIndex: 4,
-              order: { xs: 2, lg: 1 },
-              // Choreography transform:
-              // - In two-cards: Sits shifted towards center
-              // - In spider-huge: Slides far left off-screen & disappears
-              // - In hero-settle: Settles into normal position
-              transform: isTwoCards
-                ? { xs: "none", lg: "translateX(80px) scale(1.02)" }
-                : isSpiderHuge
-                  ? "translateX(-150vw) scale(0.65)"
-                  : "none",
-              opacity: isSpiderHuge ? 0 : 1,
+              gridColumn: { xs: "1", md: "1" },
+              maxWidth: { xs: "100%", md: 540, lg: 620 },
+              opacity: isHeroVisible ? 1 : 0,
+              transform: isHeroVisible ? "none" : "translateY(24px)",
               transition:
-                "transform 1.1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+                "opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)",
+              pointerEvents: isHeroVisible ? "auto" : "none",
             }}
           >
-            {/* Headline, Subtitle, CTA & Stats (Reveals ONLY when Hero Settles) */}
-            <Box
-              sx={{
-                display: isHeroSettle ? "flex" : "none",
-                flexDirection: "column",
-                gap: 2.4,
-                opacity: isHeroSettle ? 1 : 0,
-                transform: isHeroSettle ? "none" : "translateY(-30px)",
-                transition:
-                  "opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.3s",
-                pointerEvents: isHeroSettle ? "auto" : "none",
-              }}
-            >
-              {/* Status Live Tag */}
+            {/* Status Live Tag */}
               <Box
                 sx={{
                   display: "inline-flex",
@@ -418,76 +531,62 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
               </Box>
             </Box>
 
-            {/* Left 3D Paper (Shown ONLY during two-cards stage) */}
-            {isTwoCards && (
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
-                <PaperCard variant="site-of-the-year" />
-              </Box>
-            )}
-          </Box>
-
-          {/* ════════════ CENTER COLUMN: Crystal Spider (Empty in Two-Cards Stage) ════════════ */}
+          {/* ════════════ RIGHT COLUMN SPACER ON DESKTOP ════════════ */}
           <Box
             sx={{
-              position: "relative",
-              height: { xs: 380, sm: 460, md: 540, lg: 620 },
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 3,
-              order: { xs: 1, lg: 2 },
-              // In two-cards: Center is completely empty!
-              opacity: isHeroSettle ? 1 : 0,
-              pointerEvents: isHeroSettle ? "auto" : "none",
-              transition: "opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1)",
+              display: { xs: "none", md: "block" },
+              minHeight: { md: 540, lg: 640 },
+              pointerEvents: "none",
             }}
-          >
-            {/* Ambient Radial Spotlight behind settled spider */}
-            <Box
-              sx={{
-                position: "absolute",
-                width: { xs: 260, md: 460 },
-                height: { xs: 260, md: 460 },
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle, rgba(97, 218, 251, 0.18) 0%, rgba(206, 242, 168, 0.06) 45%, transparent 75%)",
-                filter: "blur(40px)",
-                pointerEvents: "none",
-              }}
-            />
-
-            {/* 3D Spider Canvas (Settled in Hero Stage) */}
-            {isHeroSettle && <SpiderHeroScene stage="hero" />}
-          </Box>
-
-          {/* ════════════ RIGHT COLUMN: Pure 3D Paper (Image 2) ════════════ */}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              zIndex: 4,
-              order: { xs: 3, lg: 3 },
-              alignItems: { xs: "center", lg: "flex-end" },
-              // Choreography transform:
-              // - In two-cards: Sits shifted towards center
-              // - In spider-huge: Slides far right off-screen & disappears
-              // - In hero-settle: Settles into normal position
-              transform: isTwoCards
-                ? { xs: "none", lg: "translateX(-80px) scale(1.02)" }
-                : isSpiderHuge
-                  ? "translateX(150vw) scale(0.65)"
-                  : "none",
-              opacity: isSpiderHuge ? 0 : 1,
-              transition:
-                "transform 1.1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
-          >
-            {/* Pure 3D Paper Sheet (Shown during both two-cards & hero-settle) */}
-            <PaperCard variant="site-of-the-year" />
-          </Box>
+          />
         </Box>
       </Container>
+
+      {/* ════════════ PERSISTENT 3D CRYSTAL SPIDER CANVAS (Zero WebGL Recreations, Locked 60/120fps) ════════════ */}
+      <Box
+        sx={{
+          position: isIntroPhase ? "fixed" : "absolute",
+          inset: isIntroPhase ? 0 : undefined,
+          top: 0,
+          right: 0,
+          width: isIntroPhase ? "100%" : { xs: "100%", md: "50%" },
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: isIntroPhase ? (isLoader ? 10 : 80) : 3,
+          pointerEvents: isHeroSettle ? "auto" : "none",
+          transition: isIntroPhase ? "none" : "width 0.4s ease",
+        }}
+      >
+        {/* Ambient Radial Spotlight behind settled spider */}
+        {!isIntroPhase && (
+          <Box
+            sx={{
+              position: "absolute",
+              width: { xs: 260, md: 460 },
+              height: { xs: 260, md: 460 },
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(97, 218, 251, 0.18) 0%, rgba(206, 242, 168, 0.06) 45%, transparent 75%)",
+              filter: "blur(40px)",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+
+        {/* Persistent 3D Spider Canvas */}
+        <SpiderHeroScene
+          stage={
+            isLoader
+              ? "loader"
+              : stage === "spider-zoom"
+              ? "huge"
+              : "hero"
+          }
+          dropFromTop={stage === "spider-drop" || stage === "hero-settle"}
+        />
+      </Box>
     </Box>
   );
 }
