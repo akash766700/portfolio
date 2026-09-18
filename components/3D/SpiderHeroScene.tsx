@@ -290,7 +290,7 @@ function SpiderModel({
   const recedeProgress = useRef(0);
   const spinAngle = useRef(0);
   const heroScale = useRef(BASE_SPIDER_SCALE);
-
+// dfgh
   const clonedScene = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((child: any) => {
