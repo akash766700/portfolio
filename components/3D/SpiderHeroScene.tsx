@@ -212,23 +212,33 @@ function SpiderClickRipple({
   clickPulseRef: React.MutableRefObject<number>;
 }) {
   const rippleRef = useRef<THREE.Mesh>(null);
+  const ripplePulse = useRef(0);
 
   useFrame((_, delta) => {
     if (!rippleRef.current) return;
-    if (clickPulseRef.current > 0.01) {
+    if (clickPulseRef.current > 0.5) {
+      ripplePulse.current = 1.0;
+    }
+    if (ripplePulse.current > 0.01) {
       rippleRef.current.visible = true;
-      const p = 1.0 - clickPulseRef.current; // 0 to 1
-      const scale = 0.4 + p * 3.8;
-      rippleRef.current.scale.set(scale, scale, scale);
+      ripplePulse.current = THREE.MathUtils.damp(
+        ripplePulse.current,
+        0,
+        2.8,
+        delta
+      );
+      const p = 1.0 - ripplePulse.current; // 0 to 1
+      const scale = 0.4 + p * 4.2;
+      rippleRef.current.scale.set(scale, scale, 1);
       const mat = rippleRef.current.material as THREE.MeshBasicMaterial;
-      if (mat) mat.opacity = clickPulseRef.current * 0.85;
+      if (mat) mat.opacity = ripplePulse.current * 0.9;
     } else {
       rippleRef.current.visible = false;
     }
   });
 
   return (
-    <mesh ref={rippleRef} rotation={[Math.PI / 2, 0, 0]}>
+    <mesh ref={rippleRef} position={[0, -1.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[0.3, 0.45, 48]} />
       <meshBasicMaterial
         color="#00F0FF"
@@ -242,25 +252,134 @@ function SpiderClickRipple({
   );
 }
 
-// ── Dynamic Orbiting Prism Light (Glints across Crystal Facets) ──
-function DynamicPrismLight() {
-  const lightRef = useRef<THREE.PointLight>(null);
-  useFrame((state) => {
-    if (!lightRef.current) return;
-    const t = state.clock.elapsedTime * 1.5;
-    lightRef.current.position.x = Math.cos(t) * 3.6;
-    lightRef.current.position.z = Math.sin(t) * 3.6;
-    lightRef.current.position.y = 1.6 + Math.sin(t * 1.2) * 1.2;
+// ── Interactive 360 Spin Energy Shockwave (Dual Cyan + Solar Amber) ──
+function SpiderSpinShockwave({
+  spinPulseRef,
+}: {
+  spinPulseRef: React.MutableRefObject<number>;
+}) {
+  const outerRingRef = useRef<THREE.Mesh>(null);
+  const innerRingRef = useRef<THREE.Mesh>(null);
+
+  useFrame((_, delta) => {
+    if (spinPulseRef.current > 0.01) {
+      spinPulseRef.current = THREE.MathUtils.damp(
+        spinPulseRef.current,
+        0,
+        2.4,
+        delta
+      );
+      const p = 1.0 - spinPulseRef.current;
+
+      if (outerRingRef.current) {
+        outerRingRef.current.visible = true;
+        const scale1 = 0.4 + p * 4.6;
+        outerRingRef.current.scale.set(scale1, scale1, 1);
+        const mat = outerRingRef.current.material as THREE.MeshBasicMaterial;
+        if (mat) mat.opacity = spinPulseRef.current * 0.92;
+      }
+
+      if (innerRingRef.current) {
+        innerRingRef.current.visible = true;
+        const scale2 = 0.2 + p * 3.6;
+        innerRingRef.current.scale.set(scale2, scale2, 1);
+        const mat = innerRingRef.current.material as THREE.MeshBasicMaterial;
+        if (mat) mat.opacity = spinPulseRef.current * 0.78;
+      }
+    } else {
+      if (outerRingRef.current) outerRingRef.current.visible = false;
+      if (innerRingRef.current) innerRingRef.current.visible = false;
+    }
   });
 
   return (
-    <pointLight
-      ref={lightRef}
-      intensity={3.2}
-      color="#00F0FF"
-      distance={9.5}
-      decay={2}
-    />
+    <group position={[0, -1.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Outer Glacial Cyan Ring */}
+      <mesh ref={outerRingRef} scale={[0.1, 0.1, 1]}>
+        <ringGeometry args={[0.36, 0.48, 48]} />
+        <meshBasicMaterial
+          color="#00F0FF"
+          transparent
+          opacity={0}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      {/* Inner Solar Amber Core Ring */}
+      <mesh ref={innerRingRef} scale={[0.1, 0.1, 1]}>
+        <ringGeometry args={[0.2, 0.28, 48]} />
+        <meshBasicMaterial
+          color="#FF9100"
+          transparent
+          opacity={0}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+// ── Smooth Orbiting Studio Accent Lights for Natural Specular Highlights ──
+function DynamicPrismLight() {
+  const primaryLightRef = useRef<THREE.PointLight>(null);
+  const secondaryLightRef = useRef<THREE.PointLight>(null);
+  const legRakeLightRef = useRef<THREE.PointLight>(null);
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    const t = time * 0.9;
+
+    if (primaryLightRef.current) {
+      primaryLightRef.current.position.x = Math.cos(t) * 3.8;
+      primaryLightRef.current.position.z = Math.sin(t) * 3.8;
+      primaryLightRef.current.position.y = 1.6 + Math.sin(t * 1.2) * 1.0;
+    }
+
+    if (secondaryLightRef.current) {
+      secondaryLightRef.current.position.x = -Math.cos(t * 0.85) * 3.4;
+      secondaryLightRef.current.position.z = -Math.sin(t * 0.85) * 3.4;
+      secondaryLightRef.current.position.y = 2.0 + Math.cos(t * 1.1) * 0.8;
+    }
+
+    if (legRakeLightRef.current) {
+      // Dynamic low-raking light positioned to sweep specifically across the legs and back crystals
+      const tLeg = time * 1.35;
+      legRakeLightRef.current.position.x = Math.sin(tLeg) * 3.5;
+      legRakeLightRef.current.position.z = -0.8 + Math.cos(tLeg) * 2.5;
+      legRakeLightRef.current.position.y = 0.45 + Math.sin(time * 1.8) * 0.3;
+    }
+  });
+
+  return (
+    <group>
+      {/* Primary Ice Cyan studio light to gleam across Glacial Ice crystal crown */}
+      <pointLight
+        ref={primaryLightRef}
+        intensity={2.8}
+        color="#00E5FF"
+        distance={12.0}
+        decay={2}
+      />
+      {/* Secondary Solar Amber fill to warm up the Molten Core and brass legs */}
+      <pointLight
+        ref={secondaryLightRef}
+        intensity={2.2}
+        color="#FFA726"
+        distance={10.0}
+        decay={2}
+      />
+      {/* Dynamic Leg & Back Specular Raking Light */}
+      <pointLight
+        ref={legRakeLightRef}
+        intensity={2.6}
+        color="#FFFFFF"
+        distance={9.0}
+        decay={2}
+      />
+    </group>
   );
 }
 
@@ -271,6 +390,10 @@ interface SpiderProps {
   xSwayRef: React.MutableRefObject<number>;
   landedRef: React.MutableRefObject<boolean>;
   clickPulseRef: React.MutableRefObject<number>;
+  spinTrickRef: React.MutableRefObject<number>;
+  spinPulseRef: React.MutableRefObject<number>;
+  idleTimerRef: React.MutableRefObject<number>;
+  isDraggingRef: React.MutableRefObject<boolean>;
 }
 
 const SPIDER_MODEL_PATH = "/models/crystal_spider.glb";
@@ -284,12 +407,18 @@ function SpiderModel({
   xSwayRef,
   landedRef,
   clickPulseRef,
+  spinTrickRef,
+  spinPulseRef,
+  idleTimerRef,
+  isDraggingRef,
 }: SpiderProps) {
   const { scene } = useGLTF(SPIDER_MODEL_PATH);
   const groupRef = useRef<THREE.Group>(null);
   const recedeProgress = useRef(0);
   const spinAngle = useRef(0);
   const heroScale = useRef(BASE_SPIDER_SCALE);
+  const legShineUniform = useRef({ value: 0 });
+
   const clonedScene = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((child: any) => {
@@ -297,21 +426,194 @@ function SpiderModel({
         if (child.material.transparent) {
           child.material.depthWrite = true;
         }
+        // Ultra-crisp 16x anisotropic filtering for crystal/metallic facets
+        ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap"].forEach(
+          (key) => {
+            if (child.material[key]) {
+              child.material[key].anisotropy = 16;
+              child.material[key].minFilter = THREE.LinearMipmapLinearFilter;
+              child.material[key].generateMipmaps = true;
+              child.material[key].needsUpdate = true;
+            }
+          }
+        );
+        if (
+          child.material.isMeshStandardMaterial ||
+          child.material.isMeshPhysicalMaterial
+        ) {
+          child.material.envMapIntensity = 2.4;
+          child.material.roughness = Math.min(child.material.roughness, 0.20);
+          child.material.metalness = Math.max(child.material.metalness, 0.68);
+
+          // Spatial Multi-Tone Luxury Shader:
+          // 1. Front: Vivid Deep Dark Red Eyes
+          // 2. Middle: Molten Orange Plasma Core
+          // 3. Back: 2-Tone Duo (Deep Cobalt Sapphire Blue Base + Glacial Ice Diamond Crown)
+          // 4. Legs: Dynamic Traveling Chromatic Shine (Silver, Dark Red & Gold glints)
+          child.material.onBeforeCompile = (shader: any) => {
+            shader.uniforms.uLegShineTime = legShineUniform.current;
+
+            // Vertex shader: pass model position to fragment
+            shader.vertexShader = shader.vertexShader.replace(
+              "#include <common>",
+              `
+              #include <common>
+              varying vec3 vSpiderModelPos;
+              `
+            );
+            shader.vertexShader = shader.vertexShader.replace(
+              "#include <begin_vertex>",
+              `
+              #include <begin_vertex>
+              vSpiderModelPos = position;
+              `
+            );
+
+            // Fragment shader: receive model position & time uniform
+            shader.fragmentShader = shader.fragmentShader.replace(
+              "#include <common>",
+              `
+              #include <common>
+              varying vec3 vSpiderModelPos;
+              uniform float uLegShineTime;
+              `
+            );
+
+            // Diffuse facet transform
+            shader.fragmentShader = shader.fragmentShader.replace(
+              "#include <map_fragment>",
+              `
+              #include <map_fragment>
+              // 1. Crystal Facet Tinting
+              if (diffuseColor.g > diffuseColor.r * 1.05 && diffuseColor.g > diffuseColor.b * 0.82) {
+                float luma = max(diffuseColor.g, max(diffuseColor.r, diffuseColor.b));
+                
+                // FRONT EYES: Pure Sleek Dark Red (Deep Garnet / Dark Glossy Wine)
+                if (vSpiderModelPos.z > 0.72) {
+                  vec3 deepDarkRed = vec3(0.38, 0.018, 0.035);
+                  diffuseColor.rgb = mix(diffuseColor.rgb, deepDarkRed * (luma * 1.1 + 0.04), 0.99);
+                }
+                // MIDDLE CORE: Molten Orange Plasma (Thorax / Orb)
+                else if (vSpiderModelPos.z >= -0.38) {
+                  vec3 moltenCore = vec3(1.0, 0.45, 0.05);
+                  diffuseColor.rgb = mix(diffuseColor.rgb, moltenCore * (luma * 1.85 + 0.12), 0.94);
+                }
+                // BACK ABDOMEN & CRYSTALS: Deep Dark Sapphire Obsidian (Muted, Non-white, No shine)
+                else {
+                  vec3 deepSapphire = vec3(0.04, 0.16, 0.40);
+                  diffuseColor.rgb = mix(diffuseColor.rgb, deepSapphire * (luma * 1.15 + 0.04), 0.95);
+                }
+              }
+
+              // 2. DYNAMIC SHINE: EXCLUSIVELY AND ONLY ON LEGS & CLAWS!
+              // (Zero shine on the head, eyes, middle core, and back dome/abdomen!)
+              bool isCentralBody = (abs(vSpiderModelPos.x) < 0.55);
+              bool isLeg = !isCentralBody && (abs(vSpiderModelPos.x) > 0.58 || (abs(vSpiderModelPos.x) > 0.38 && vSpiderModelPos.z > 0.90));
+
+              if (isLeg) {
+                float legSpan = length(vSpiderModelPos.xz);
+                float sweepPhase = legSpan * 2.8 - uLegShineTime * 1.85;
+                float glintIntensity = pow(max(0.0, sin(sweepPhase)), 8.0);
+
+                // Chromatic tones: Diamond Platinum Silver, Deep Dark Ruby Red, & Polished Gold
+                vec3 silverShine = vec3(0.96, 0.98, 1.0) * 1.8;
+                vec3 darkRedShine = vec3(0.78, 0.05, 0.10) * 1.5;
+                vec3 goldShine = vec3(1.0, 0.85, 0.42) * 1.35;
+
+                // Color morphs smoothly over time
+                float colorCycle = sin(uLegShineTime * 0.85 + legSpan * 1.2) * 0.5 + 0.5;
+                vec3 waveColor = mix(silverShine, darkRedShine, colorCycle);
+                waveColor = mix(waveColor, goldShine, sin(uLegShineTime * 0.5) * 0.3 + 0.3);
+
+                // Apply dynamic specular sheen ONLY onto legs
+                diffuseColor.rgb += waveColor * glintIntensity * 0.55;
+              }
+              `
+            );
+
+            // Emissive radiance transform
+            shader.fragmentShader = shader.fragmentShader.replace(
+              "#include <emissivemap_fragment>",
+              `
+              #include <emissivemap_fragment>
+              if (totalEmissiveRadiance.g > totalEmissiveRadiance.r * 1.02) {
+                float elum = max(totalEmissiveRadiance.g, max(totalEmissiveRadiance.r, totalEmissiveRadiance.b));
+                
+                // 1. FRONT: Subtle Deep Dark Red Underglow
+                if (vSpiderModelPos.z > 0.72) {
+                  vec3 darkGarnet = vec3(0.42, 0.015, 0.030);
+                  totalEmissiveRadiance = darkGarnet * elum * 1.4;
+                }
+                // 2. MIDDLE: Radiant Solar Plasma Orange Core
+                else if (vSpiderModelPos.z >= -0.38) {
+                  vec3 plasmaOrange = vec3(1.0, 0.38, 0.0);
+                  totalEmissiveRadiance = plasmaOrange * elum * 3.8;
+                }
+                // 3. BACK: Deep Muted Sapphire Underglow (NO white/starlight flash)
+                else {
+                  vec3 sapphireGlow = vec3(0.05, 0.18, 0.45);
+                  totalEmissiveRadiance = sapphireGlow * elum * 1.5;
+                }
+              }
+              `
+            );
+          };
+
+          child.material.needsUpdate = true;
+        }
       }
     });
     return c;
   }, [scene]);
 
+  const isSpinningRef = useRef(false);
+  const spinProgressRef = useRef(0);
+  const startSpinAngleRef = useRef(0);
+
+  const isJumpingRef = useRef(false);
+  const jumpProgressRef = useRef(0);
+
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    if (clickPulseRef.current > 0.01) {
-      clickPulseRef.current = THREE.MathUtils.damp(
-        clickPulseRef.current,
-        0,
-        4.2,
-        delta,
-      );
+    legShineUniform.current.value = state.clock.elapsedTime;
+
+    // ── Check for Jump Trigger (Single-Click) ──
+    if (
+      clickPulseRef.current > 0.1 &&
+      !isJumpingRef.current &&
+      !isSpinningRef.current &&
+      stage === "hero"
+    ) {
+      isJumpingRef.current = true;
+      jumpProgressRef.current = 0;
+    }
+
+    // ── Check for Spin Trick Trigger (Double-Click or 15s Idle Timer) ──
+    if (
+      spinTrickRef.current > 0.1 &&
+      !isSpinningRef.current &&
+      stage === "hero"
+    ) {
+      isSpinningRef.current = true;
+      spinProgressRef.current = 0;
+      isJumpingRef.current = false;
+      startSpinAngleRef.current = groupRef.current.rotation.y;
+      spinTrickRef.current = 0;
+    }
+
+    // ── 15-Second Idle Auto-Rotate Trigger ──
+    if (
+      stage === "hero" &&
+      !isSpinningRef.current &&
+      !isJumpingRef.current
+    ) {
+      idleTimerRef.current += delta;
+      if (idleTimerRef.current >= 15.0) {
+        idleTimerRef.current = 0;
+        spinTrickRef.current = 1.0;
+        spinPulseRef.current = 1.0;
+      }
     }
 
     if (stage === "loader") {
@@ -325,28 +627,28 @@ function SpiderModel({
     }
 
     if (stage === "huge") {
-      // Advance normalized progress over 2.9s
+      // Advance normalized progress over full 7.0s (spider end tak ghumta hua dikhega)
       recedeProgress.current = Math.min(
         1,
-        recedeProgress.current + delta / 2.9,
+        recedeProgress.current + delta / 7.0,
       );
       const p = recedeProgress.current;
 
-      // ── Smooth Ease-In Curve (p^2.4): Starts rotating gracefully, then accelerates into cosmic depth ──
-      const ease = Math.pow(p, 2.4);
+      // ── Smooth Ease-In Curve (p^2.2): Stays prominent & spins majestically for first 4.5s, then accelerates into cosmic depth ──
+      const ease = Math.pow(p, 2.2);
 
-      // 1. Scale: starts huge (BASE_SPIDER_SCALE * 2.5), rotates and rapidly collapses to 0.0008
+      // 1. Scale: starts huge (BASE_SPIDER_SCALE * 2.5), spins prominently, then smoothly recedes to 0.0008
       const startScale = BASE_SPIDER_SCALE * 2.5;
       const currentScale = THREE.MathUtils.lerp(startScale, 0.0008, ease);
 
-      // 2. Position Z: starts at 0, drifts backward and accelerates deep into cosmic space (-8.0)
+      // 2. Position Z: starts at 0, drifts backward into cosmic depth (-8.0)
       const currentPosZ = THREE.MathUtils.lerp(0, -8.0, ease);
 
-      // 3. Position Y (girte hue): gently drifts downward as it recedes
+      // 3. Position Y: gently drifts downward as it recedes into cosmos
       const currentPosY = THREE.MathUtils.lerp(0.1, -1.15, ease);
 
-      // 4. Spin (rotation): continuous majestic 360 rotation that accelerates smoothly
-      const spinSpeed = 1.25 + ease * 3.8;
+      // 4. Spin (rotation): continuous majestic 360 rotation that accelerates smoothly across the 7 seconds
+      const spinSpeed = 1.35 + ease * 3.2;
       spinAngle.current += delta * spinSpeed;
       groupRef.current.rotation.y = spinAngle.current;
       groupRef.current.rotation.x = THREE.MathUtils.lerp(0, 0.35, ease);
@@ -378,17 +680,73 @@ function SpiderModel({
         }
       } else {
         yRef.current = 0;
+        landedRef.current = true;
         xSwayRef.current = THREE.MathUtils.lerp(xSwayRef.current, 0, delta * 8);
-        groupRef.current.position.x = xSwayRef.current;
-        groupRef.current.rotation.y = 0;
-        groupRef.current.rotation.x = 0;
-        groupRef.current.rotation.z = 0;
+
+        // ── 360° Acrobatic Spin Trick Motion ──
+        if (isSpinningRef.current) {
+          spinProgressRef.current += delta / 0.85; // Full trick in ~0.85s
+          const p = Math.min(1.0, spinProgressRef.current);
+
+          // Quintic ease in-out for silky, acrobatic acceleration & deceleration
+          const ease =
+            p < 0.5
+              ? 4 * p * p * p
+              : 1 - Math.pow(-2 * p + 2, 3) / 2;
+
+          const currentSpin = ease * Math.PI * 2; // full 360-degree rotation
+          groupRef.current.rotation.y = startSpinAngleRef.current + currentSpin;
+          groupRef.current.rotation.z = Math.sin(p * Math.PI * 2) * 0.20;
+          groupRef.current.rotation.x = -Math.sin(p * Math.PI) * 0.22;
+
+          if (spinProgressRef.current >= 1.0) {
+            isSpinningRef.current = false;
+            groupRef.current.rotation.y = startSpinAngleRef.current;
+            groupRef.current.rotation.z = 0;
+            groupRef.current.rotation.x = 0;
+          }
+        } else if (isJumpingRef.current) {
+          const p = Math.min(1.0, jumpProgressRef.current);
+          const sinP = Math.sin(p * Math.PI);
+          groupRef.current.rotation.x = -sinP * 0.22; // predatory pounce tilt
+          groupRef.current.rotation.z = 0;
+        } else {
+          // Rest naturally in steady stance (no cursor following)
+          groupRef.current.rotation.y = THREE.MathUtils.lerp(
+            groupRef.current.rotation.y,
+            0,
+            delta * 4.0
+          );
+          groupRef.current.rotation.x = THREE.MathUtils.lerp(
+            groupRef.current.rotation.x,
+            0,
+            delta * 4.0
+          );
+          groupRef.current.rotation.z = THREE.MathUtils.lerp(
+            groupRef.current.rotation.z,
+            0,
+            delta * 6.0
+          );
+        }
       }
 
-      // Interactive Click spring bounce
+      // ── Interactive Single Click Jump Spring Bounce (0.52s parabolic physics arc) ──
       let clickJump = 0;
-      if (clickPulseRef.current > 0.01) {
-        clickJump = Math.sin(clickPulseRef.current * Math.PI) * 0.25;
+      if (isJumpingRef.current) {
+        jumpProgressRef.current += delta / 0.52;
+        const p = Math.min(1.0, jumpProgressRef.current);
+        clickJump = Math.sin(p * Math.PI) * 0.65; // High, crisp, visible leap!
+        if (jumpProgressRef.current >= 1.0) {
+          isJumpingRef.current = false;
+          clickPulseRef.current = 0;
+        }
+      }
+
+      // ── Acrobatic Spin Aerial Lift ──
+      let spinHop = 0;
+      if (isSpinningRef.current) {
+        const p = Math.min(1.0, spinProgressRef.current);
+        spinHop = Math.sin(p * Math.PI) * 0.45;
       }
 
       // Organic subtle breathing hover oscillation
@@ -396,13 +754,36 @@ function SpiderModel({
         yRef.current <= 0.02
           ? Math.sin(state.clock.elapsedTime * 2.2) * 0.025
           : 0;
-      groupRef.current.position.y = yRef.current + clickJump + breathingHover;
-      groupRef.current.scale.setScalar(heroScale.current);
+
+      groupRef.current.position.y =
+        yRef.current + clickJump + spinHop + breathingHover;
+
+      const jumpSquash = isJumpingRef.current
+        ? 1.0 + Math.sin(jumpProgressRef.current * Math.PI) * 0.08
+        : 1.0;
+      groupRef.current.scale.setScalar(heroScale.current * jumpSquash);
     }
   });
 
   return (
-    <group ref={groupRef}>
+    <group
+      ref={groupRef}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (stage === "hero") {
+          clickPulseRef.current = 1.0;
+          idleTimerRef.current = 0;
+        }
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        if (stage === "hero") {
+          spinTrickRef.current = 1.0;
+          spinPulseRef.current = 1.0;
+          idleTimerRef.current = 0;
+        }
+      }}
+    >
       <Center>
         <primitive object={clonedScene} />
       </Center>
@@ -424,11 +805,46 @@ export default function SpiderHeroScene({
   dropFromTop = false,
 }: SpiderHeroSceneProps) {
   const mousePos = useRef({ x: 0, y: 0 });
-  const yRef = useRef(dropFromTop ? 4.8 : 0);
+  const yRef = useRef(4.8);
   const xSwayRef = useRef(0);
   const landedRef = useRef(false);
   const clickPulseRef = useRef(0);
+  const spinTrickRef = useRef(0);
+  const spinPulseRef = useRef(0);
+  const idleTimerRef = useRef(0);
+  const isDraggingRef = useRef(false);
+  const pointerDownPos = useRef({ x: 0, y: 0 });
+  const hasMovedRef = useRef(false);
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastClickTimeRef = useRef<number>(0);
   const [isHovered, setIsHovered] = useState(false);
+
+  const resetIdle = () => {
+    idleTimerRef.current = 0;
+  };
+
+  // Dynamic user activity tracking to reset 15-second idle timer
+  useEffect(() => {
+    const handleActivity = () => {
+      idleTimerRef.current = 0;
+    };
+
+    window.addEventListener("scroll", handleActivity, { passive: true });
+    window.addEventListener("keydown", handleActivity, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+    };
+  }, []);
+
+  // Cleanup click debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
 
   // Transition handler: Reset yRef when transitioning into hero drop
   const prevStageRef = useRef(stage);
@@ -440,10 +856,81 @@ export default function SpiderHeroScene({
     prevStageRef.current = stage;
   }, [stage, dropFromTop]);
 
-  const handleClick = () => {
+  const triggerJump = () => {
     if (stage === "hero") {
       clickPulseRef.current = 1.0;
     }
+  };
+
+  const triggerSpin = () => {
+    if (stage === "hero") {
+      spinTrickRef.current = 1.0;
+      spinPulseRef.current = 1.0;
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+    hasMovedRef.current = false;
+    resetIdle();
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (e.buttons > 0) {
+      const dx = Math.abs(e.clientX - pointerDownPos.current.x);
+      const dy = Math.abs(e.clientY - pointerDownPos.current.y);
+      if (dx > 5 || dy > 5) {
+        hasMovedRef.current = true;
+      }
+    }
+  };
+
+  const handlePointerUp = () => {
+    resetIdle();
+  };
+
+  const handleClick = () => {
+    if (stage !== "hero") return;
+    resetIdle();
+
+    // If user dragged to orbit the spider, do not trigger click action
+    if (hasMovedRef.current) {
+      hasMovedRef.current = false;
+      return;
+    }
+
+    const now = Date.now();
+    const timeSinceLast = now - lastClickTimeRef.current;
+
+    if (timeSinceLast > 0 && timeSinceLast < 320) {
+      // ── DOUBLE CLICK: Acrobatic 360° Spin Trick ──
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+      lastClickTimeRef.current = 0;
+      triggerSpin();
+    } else {
+      // ── SINGLE CLICK: Spring Jump ──
+      lastClickTimeRef.current = now;
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+      clickTimerRef.current = setTimeout(() => {
+        triggerJump();
+        clickTimerRef.current = null;
+      }, 210);
+    }
+  };
+
+  const handleDoubleClick = () => {
+    if (stage !== "hero" || hasMovedRef.current) return;
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+    lastClickTimeRef.current = 0;
+    triggerSpin();
   };
 
   return (
@@ -451,7 +938,11 @@ export default function SpiderHeroScene({
       className={className}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       style={{
         width: "100%",
         height: "100%",
@@ -464,25 +955,29 @@ export default function SpiderHeroScene({
       <Suspense fallback={null}>
         <Canvas
           camera={{ position: [0, 1.05, 4.4], fov: 48 }}
-          dpr={[1, 1.5]}
+          dpr={[2, 3]}
           gl={{
             antialias: true,
             alpha: true,
             powerPreference: "high-performance",
+            precision: "highp",
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.25,
+            toneMappingExposure: 1.45,
           }}
           style={{ width: "100%", height: "100%" }}
         >
+          {/* Photorealistic IBL Environment reflections for crystal/metallic facets */}
+          <Environment preset="city" environmentIntensity={1.35} />
+
           {/* Ambient & Studio lighting for crystal reflections */}
-          <ambientLight intensity={1.6} />
+          <ambientLight intensity={1.5} />
           {/* Top key light */}
-          <directionalLight position={[4, 8, 4]} intensity={2.6} />
-          {/* Cyan / ice blue rim light to catch crystal facets */}
-          <pointLight position={[-4, 3, -3]} intensity={2.2} color="#61DAFB" />
-          {/* Warm gold / champagne accent light */}
-          <pointLight position={[3, -2, 2]} intensity={1.6} color="#E1DCC9" />
-          <pointLight position={[0, 4, 3]} intensity={1.0} color="#FFFFFF" />
+          <directionalLight position={[4, 8, 4]} intensity={2.9} />
+          {/* Sapphire Blue rim light to accent the back crystals */}
+          <pointLight position={[-4, 3, -3]} intensity={3.5} color="#00B0FF" />
+          {/* Warm gold / champagne accent light to enrich brass legs & molten core */}
+          <pointLight position={[3, -2, 2]} intensity={2.2} color="#FFD54F" />
+          <pointLight position={[0, 4, 3]} intensity={1.4} color="#FFFFFF" />
 
           {/* Dynamic Orbiting Prism Light for Shimmering Crystal Glints */}
           <DynamicPrismLight />
@@ -503,6 +998,9 @@ export default function SpiderHeroScene({
           {/* Interactive Click Shockwave Ripple */}
           <SpiderClickRipple clickPulseRef={clickPulseRef} />
 
+          {/* Interactive 360 Spin Shockwave Rings */}
+          <SpiderSpinShockwave spinPulseRef={spinPulseRef} />
+
           {/* Unconditional Float wrapper: NEVER unmounts SpiderModel between stages */}
           <Float
             speed={1.4}
@@ -517,17 +1015,21 @@ export default function SpiderHeroScene({
               xSwayRef={xSwayRef}
               landedRef={landedRef}
               clickPulseRef={clickPulseRef}
+              spinTrickRef={spinTrickRef}
+              spinPulseRef={spinPulseRef}
+              idleTimerRef={idleTimerRef}
+              isDraggingRef={isDraggingRef}
             />
           </Float>
 
-          {/* Luxury crystal sparkles / warp dust */}
+          {/* Glacial Diamond Ice & Stardust Sparkles */}
           <Sparkles
-            count={stage === "huge" ? 48 : 24}
+            count={stage === "huge" ? 48 : 28}
             scale={stage === "huge" ? 6.0 : 4.2}
             size={stage === "huge" ? 2.2 : 1.6}
             speed={stage === "huge" ? 1.0 : 0.4}
-            opacity={stage === "huge" ? 0.8 : 0.6}
-            color="#61DAFB"
+            opacity={stage === "huge" ? 0.9 : 0.75}
+            color="#E0F7FA"
           />
 
           {/* Soft grounding shadow - only needed on floor in hero stage */}
@@ -552,7 +1054,10 @@ export default function SpiderHeroScene({
             maxPolarAngle={Math.PI / 1.7}
             minPolarAngle={Math.PI / 3.2}
             rotateSpeed={0.95}
-            enabled={stage === "hero" && landedRef.current}
+            enabled={stage === "hero"}
+            onChange={() => {
+              idleTimerRef.current = 0;
+            }}
           />
         </Canvas>
       </Suspense>

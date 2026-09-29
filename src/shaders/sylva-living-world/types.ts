@@ -14,4 +14,5 @@ export type SylvaLivingWorldSceneProps = {
   variant?: SylvaLivingWorldVariant;
   className?: string;
   style?: CSSProperties;
+  startScan?: boolean;
 };

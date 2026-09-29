@@ -20,7 +20,7 @@ interface DecryptedTextProps {
 // ── Ultra-Smooth Decrypted Text (Direct DOM Mutation, Throttled Hacker Rhythm, 60fps) ──
 function DecryptedText({
   text,
-  revealDuration = 1400,
+  revealDuration = 2400,
   characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*<>~",
   sx,
   hoverEffect = true,
@@ -304,10 +304,10 @@ export default function BrandOrbLoader({
   onCompleteRef.current = onComplete;
   const completedFired = useRef(false);
 
-  // ── Snappy 1.4s Progress Loop (Immediate response, user can click/wheel to skip instantly) ──
+  // ── Extended 4.8s Progress Loop (3-4 sec longer loading with liquid smooth progress) ──
   useEffect(() => {
     let startTime: number | null = null;
-    const duration = 1400; // ms
+    const duration = 4800; // ms
     let frameId: number;
     let lastIntVal = -1;
 
@@ -355,15 +355,18 @@ export default function BrandOrbLoader({
 
     frameId = requestAnimationFrame(step);
 
-    // Instant skip on interaction
+    // Safe interaction skip (armed after 3500ms so browser reload keys/clicks don't abort immediately)
     const handleFastForward = () => triggerComplete();
-    window.addEventListener("click", handleFastForward, { once: true });
-    window.addEventListener("keydown", handleFastForward, { once: true });
-    window.addEventListener("wheel", handleFastForward, { once: true, passive: true });
-    window.addEventListener("touchstart", handleFastForward, { once: true, passive: true });
+    const armTimer = setTimeout(() => {
+      window.addEventListener("click", handleFastForward, { once: true });
+      window.addEventListener("keydown", handleFastForward, { once: true });
+      window.addEventListener("wheel", handleFastForward, { once: true, passive: true });
+      window.addEventListener("touchstart", handleFastForward, { once: true, passive: true });
+    }, 3500);
 
     return () => {
       cancelAnimationFrame(frameId);
+      clearTimeout(armTimer);
       window.removeEventListener("click", handleFastForward);
       window.removeEventListener("keydown", handleFastForward);
       window.removeEventListener("wheel", handleFastForward);
@@ -380,7 +383,8 @@ export default function BrandOrbLoader({
         zIndex: 9999,
         pointerEvents: isExiting ? "none" : "auto",
         overflow: "hidden",
-        backgroundColor: "transparent",
+        backgroundColor: isExiting ? "transparent" : "#070709",
+        transition: "background-color 0.4s ease",
       }}
     >
       {/* ════════ TOP CURTAIN PANEL ════════ */}
