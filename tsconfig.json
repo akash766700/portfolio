@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@designcodeio/threeui": ["./src/shaders/sylva-living-world/SylvaLivingWorldScene"],
+      "@designcodeio/threeui/style.css": ["./src/shaders/threeui.css"]
     }
   },
   "include": [

@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Typography, Container } from "@mui/material";
 import { Colors } from "@/utils/enum";
 import { SpiderHeroScene } from "@/components/3D";
 import LiquidButton from "./LiquidButton";
 import BrandOrbLoader from "@/components/widgets/BrandOrbLoader";
 import HeroSparkles from "./HeroSparkles";
+import { SylvaLivingWorldScene } from "@designcodeio/threeui";
+import "@designcodeio/threeui/style.css";
+import { gsap, ScrollTrigger } from "@/utils/gsap";
 
 export type IntroStage =
   | "loader"
@@ -24,26 +27,34 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
   const [loaderMounted, setLoaderMounted] = useState(true);
   const [quantumFlash, setQuantumFlash] = useState(false);
 
+  // Animation and ScrollTrigger DOM refs
+  const heroRef = useRef<HTMLDivElement>(null);
+  const portalCurtainRef = useRef<HTMLDivElement>(null);
+  const blackoutRef = useRef<HTMLDivElement>(null);
+  const contentWrapRef = useRef<HTMLDivElement>(null);
+  const spiderWrapRef = useRef<HTMLDivElement>(null);
+  const spotlightRef = useRef<HTMLDivElement>(null);
+
   // Notify parent of stage changes
   useEffect(() => {
     onStageChange?.(stage);
   }, [stage, onStageChange]);
 
-  // Stage timer choreography: Shutter opens -> immediate slow-mo falling backward into cosmos
+  // ── Cinematic Stage Sequence: Shutter opens -> Spider Rotates & Shrinks into Cosmos -> Drops from Top ──
   useEffect(() => {
     if (stage === "spider-zoom") {
-      // Trigger singularity implosion flash near the end of the slow-mo backward descent
+      // 1. Spider rotates 360 and falls backward deep into cosmos, shrinking to a point
       const flashTimer = setTimeout(() => {
         setQuantumFlash(true);
-      }, 3150);
+      }, 2450);
       const flashOffTimer = setTimeout(() => {
         setQuantumFlash(false);
-      }, 3650);
+      }, 2850);
 
-      // Gracefully transitions to hero drop from ceiling
+      // 2. Implosion complete -> Transition to spider dropping from ceiling on silk thread
       const zoomTimer = setTimeout(() => {
         setStage("spider-drop");
-      }, 3800);
+      }, 2950);
       return () => {
         clearTimeout(flashTimer);
         clearTimeout(flashOffTimer);
@@ -52,10 +63,10 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
     }
 
     if (stage === "spider-drop") {
-      // Spider visibly descends from the top of the screen on the glistening silk thread
+      // 3. Spider drops gracefully from top on silk thread and touches down in hero position
       const dropTimer = setTimeout(() => {
         setStage("hero-settle");
-      }, 2600);
+      }, 2200);
       return () => clearTimeout(dropTimer);
     }
   }, [stage]);
@@ -68,13 +79,10 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
   }, []);
 
   const handleLoaderComplete = () => {
-    // Transition immediately to fullscreen slow-mo backward fall
     setStage("spider-zoom");
-
-    // Unmount loader after split curtain opens
     setTimeout(() => {
       setLoaderMounted(false);
-    }, 850);
+    }, 400);
   };
 
   const isLoader = stage === "loader";
@@ -82,8 +90,95 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
   const isHeroVisible = stage === "spider-drop" || stage === "hero-settle";
   const isHeroSettle = stage === "hero-settle";
 
+  // ── 1. ThreeUI Style Circular Aperture Entrance Reveal (100% GPU Hardware Accelerated) ──
+  useEffect(() => {
+    if (!isHeroVisible) return;
+    const curtain = portalCurtainRef.current;
+    if (!curtain) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        curtain,
+        { scale: 0 },
+        { scale: 1.25, duration: 1.2, ease: "power2.out" }
+      );
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, [isHeroVisible]);
+
+  // ── 2. Scroll-Pinned Exact Reverse Collapse & Transition to Next Section (120fps GPU) ──
+  useEffect(() => {
+    if (stage !== "hero-settle") return;
+    const section = heroRef.current;
+    const curtain = portalCurtainRef.current;
+    const content = contentWrapRef.current;
+    const spider = spiderWrapRef.current;
+    const spotlight = spotlightRef.current;
+
+    if (!section || !curtain) return;
+
+    const ctx = gsap.context(() => {
+      const scrubTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: "top top",
+          end: "+=100%", // 100vh clean scroll scrub
+          pin: true,
+          scrub: 0.35, // Snappy & ultra-responsive!
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      // EXACT REVERSE EXIT:
+      // As user scrolls down, contract the circular aperture back into center singularity
+      scrubTl
+        // 1. Shutter hole scales down from 1.25 to 0 at center (GPU Matrix Transform!)
+        .fromTo(
+          curtain,
+          { scale: 1.25 },
+          { scale: 0, ease: "power1.inOut" },
+          0
+        )
+        // 1b. Solid Blackout Layer seals 100% into background as iris closes
+        .fromTo(
+          blackoutRef.current,
+          { opacity: 0 },
+          { opacity: 1, ease: "power2.in" },
+          0.6
+        )
+        // 2. Spider scales down and recedes toward center singularity
+        .fromTo(
+          spider,
+          { scale: 1, opacity: 1, x: 0 },
+          { scale: 0.14, opacity: 0, x: -100, ease: "power1.in" },
+          0
+        )
+        // 3. Headline, buttons, and metrics fade and contract toward center
+        .fromTo(
+          content,
+          { opacity: 1, scale: 1, x: 0 },
+          { opacity: 0, scale: 0.85, x: 100, ease: "power1.in" },
+          0
+        )
+        // 4. Spotlights and floor light dim down
+        .fromTo(
+          spotlight,
+          { opacity: 1 },
+          { opacity: 0, ease: "power1.inOut" },
+          0
+        );
+
+      ScrollTrigger.refresh();
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, [stage]);
+
   return (
     <Box
+      ref={heroRef}
       component="section"
       id="hero"
       sx={{
@@ -118,13 +213,93 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         </Box>
       )}
 
-      {/* ── Ambient Lighting Floor & Atmospheric Dual Spotlights ── */}
+      {/* ── 0. Sylva Living World Procedural Three.js Scene ── */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
-          pointerEvents: "none",
           zIndex: 0,
+          overflow: "hidden",
+          opacity: isHeroVisible ? 1 : 0,
+          pointerEvents: "auto",
+          transition: "opacity 0.6s ease",
+        }}
+      >
+        <div className="shader-frame" style={{ width: "100%", height: "100%", position: "relative" }}>
+          <SylvaLivingWorldScene
+            variant="living-green"
+            style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
+          />
+        </div>
+
+        {/* ── Subtle Edge Blending (Smooth transition without obscuring moss roots) ── */}
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            background: `
+              /* Top navbar gentle fade */
+              linear-gradient(180deg, rgba(10, 10, 12, 0.7) 0%, transparent 22%),
+              /* Bottom transition */
+              linear-gradient(0deg, #0A0A0C 0%, rgba(10, 10, 12, 0.5) 10%, transparent 25%)
+            `,
+          }}
+        />
+      </Box>
+
+      {/* ── 1. Hardware-Accelerated Iris Portal Shutter Curtain (120fps GPU Compositor) ── */}
+      <Box
+        ref={portalCurtainRef}
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: "135vmax",
+          height: "135vmax",
+          borderRadius: "50%",
+          transform: "translate(-50%, -50%) scale(0)",
+          boxShadow: "0 0 0 99999px #0A0A0C",
+          pointerEvents: "none",
+          zIndex: 1,
+          willChange: "transform",
+        }}
+      >
+        {/* Luminous Neon Cyan/Lime Scan Ring attached to Shutter Lip */}
+        <Box
+          sx={{
+            position: "absolute",
+            inset: -1,
+            borderRadius: "50%",
+            border: "2px solid #61DAFB",
+            boxShadow:
+              "0 0 25px rgba(97, 218, 251, 0.7), inset 0 0 25px rgba(206, 242, 168, 0.5)",
+            pointerEvents: "none",
+          }}
+        />
+      </Box>
+
+      {/* ── Solid Blackout Layer (Seals hero 100% into background as iris closes) ── */}
+      <Box
+        ref={blackoutRef}
+        sx={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: "#0A0A0C",
+          zIndex: 2,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* ── Ambient Lighting Floor & Atmospheric Dual Spotlights ── */}
+      <Box
+        ref={spotlightRef}
+        sx={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 1,
           background: `
             /* Primary Cyber Spotlight behind spider & right side */
             radial-gradient(60% 55% at 74% 50%, rgba(97, 218, 251, 0.20) 0%, rgba(97, 218, 251, 0.06) 45%, transparent 75%),
@@ -326,6 +501,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
 
       {/* ── MAIN CONTAINER (Hero Content & Dropping Spider) ── */}
       <Container
+        ref={contentWrapRef}
         maxWidth="xl"
         sx={{
           position: "relative",
@@ -460,7 +636,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
                   pt: 0.5,
                 }}
               >
-                <LiquidButton label="Explore The Work" href="#projects" />
+                <LiquidButton label="Explore The Work" href="#works" />
               </Box>
 
               {/* Compact Metrics Pills */}
@@ -544,11 +720,13 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
 
       {/* ════════════ PERSISTENT 3D CRYSTAL SPIDER CANVAS (Zero WebGL Recreations, Locked 60/120fps) ════════════ */}
       <Box
+        ref={spiderWrapRef}
         sx={{
           position: isIntroPhase ? "fixed" : "absolute",
-          inset: isIntroPhase ? 0 : undefined,
           top: 0,
           right: 0,
+          bottom: 0,
+          left: isIntroPhase ? 0 : { xs: 0, md: "50%" },
           width: isIntroPhase ? "100%" : { xs: "100%", md: "50%" },
           height: "100%",
           display: "flex",
@@ -556,7 +734,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
           justifyContent: "center",
           zIndex: isIntroPhase ? (isLoader ? 10 : 80) : 3,
           pointerEvents: isHeroSettle ? "auto" : "none",
-          transition: isIntroPhase ? "none" : "width 0.4s ease",
+          transition: "left 0.6s cubic-bezier(0.16, 1, 0.3, 1), width 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         {/* Ambient Radial Spotlight behind settled spider */}

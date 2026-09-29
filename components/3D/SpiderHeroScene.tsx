@@ -290,7 +290,6 @@ function SpiderModel({
   const recedeProgress = useRef(0);
   const spinAngle = useRef(0);
   const heroScale = useRef(BASE_SPIDER_SCALE);
-// dfgh
   const clonedScene = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((child: any) => {
@@ -306,7 +305,6 @@ function SpiderModel({
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Decay interactive click pulse
     if (clickPulseRef.current > 0.01) {
       clickPulseRef.current = THREE.MathUtils.damp(
         clickPulseRef.current,
@@ -327,41 +325,40 @@ function SpiderModel({
     }
 
     if (stage === "huge") {
-      // Advance normalized progress over 3.6s
-      recedeProgress.current = Math.min(1, recedeProgress.current + delta / 3.6);
+      // Advance normalized progress over 2.9s
+      recedeProgress.current = Math.min(
+        1,
+        recedeProgress.current + delta / 2.9,
+      );
       const p = recedeProgress.current;
 
-      // ── Exponential Ease-In Curve (p^2.8): Starts VERY SLOW, accelerates as spider gets smaller ──
-      const ease = Math.pow(p, 2.8);
+      // ── Smooth Ease-In Curve (p^2.4): Starts rotating gracefully, then accelerates into cosmic depth ──
+      const ease = Math.pow(p, 2.4);
 
-      // 1. Scale: starts huge (BASE_SPIDER_SCALE * 2.5), barely changes at first, then rapidly collapses to 0.0008
+      // 1. Scale: starts huge (BASE_SPIDER_SCALE * 2.5), rotates and rapidly collapses to 0.0008
       const startScale = BASE_SPIDER_SCALE * 2.5;
       const currentScale = THREE.MathUtils.lerp(startScale, 0.0008, ease);
 
-      // 2. Position Z: starts at 0, drifts backward very slowly, then accelerates deep into cosmic space (-7.5)
-      const currentPosZ = THREE.MathUtils.lerp(0, -7.5, ease);
+      // 2. Position Z: starts at 0, drifts backward and accelerates deep into cosmic space (-8.0)
+      const currentPosZ = THREE.MathUtils.lerp(0, -8.0, ease);
 
       // 3. Position Y (girte hue): gently drifts downward as it recedes
-      const currentPosY = THREE.MathUtils.lerp(0.1, -1.05, ease);
+      const currentPosY = THREE.MathUtils.lerp(0.1, -1.15, ease);
 
-      // 4. Spin (rotation): starts majestic and slow, accelerates as scale shrinks (cosmic suction spin)
-      const spinSpeed = 0.85 + ease * 3.6;
+      // 4. Spin (rotation): continuous majestic 360 rotation that accelerates smoothly
+      const spinSpeed = 1.25 + ease * 3.8;
       spinAngle.current += delta * spinSpeed;
       groupRef.current.rotation.y = spinAngle.current;
       groupRef.current.rotation.x = THREE.MathUtils.lerp(0, 0.35, ease);
-      groupRef.current.rotation.z = Math.sin(p * Math.PI) * 0.12;
+      groupRef.current.rotation.z = Math.sin(p * Math.PI) * 0.14;
 
       groupRef.current.position.set(0, currentPosY, currentPosZ);
       groupRef.current.scale.setScalar(currentScale);
     } else if (stage === "hero") {
       recedeProgress.current = 0;
-      // 3. Drop from ceiling slowly on silk thread facing FRONT (rotation.y = 0)
-      heroScale.current = THREE.MathUtils.lerp(
-        heroScale.current,
-        BASE_SPIDER_SCALE,
-        delta * 2.5
-      );
+      heroScale.current = BASE_SPIDER_SCALE;
       groupRef.current.position.z = 0;
+      groupRef.current.scale.setScalar(BASE_SPIDER_SCALE);
 
       // Descend gracefully from ceiling (y: 4.8 -> 0)
       if (yRef.current > 0.02) {

@@ -304,28 +304,37 @@ export default function BrandOrbLoader({
   onCompleteRef.current = onComplete;
   const completedFired = useRef(false);
 
-  // ── 5.4s Luxury Progress Loop (Continuous Subpixel Updates, Zero Hitching) ──
+  // ── Snappy 1.4s Progress Loop (Immediate response, user can click/wheel to skip instantly) ──
   useEffect(() => {
     let startTime: number | null = null;
-    const duration = 5400; // ms
+    const duration = 1400; // ms
     let frameId: number;
     let lastIntVal = -1;
 
+    const triggerComplete = () => {
+      if (completedFired.current) return;
+      completedFired.current = true;
+      if (lineRef.current) lineRef.current.style.width = "100%";
+      if (counterRef.current) counterRef.current.textContent = "100";
+      setTimeout(() => {
+        onCompleteRef.current?.();
+      }, 80);
+    };
+
     const step = (now: number) => {
+      if (completedFired.current) return;
       if (startTime === null) startTime = now;
       const elapsed = now - startTime;
       const t = Math.min(1, elapsed / duration);
 
-      // Liquid smooth sine easing (starts like water, glides smoothly to 100)
+      // Liquid smooth sine easing
       const ease = 0.5 - 0.5 * Math.cos(t * Math.PI);
-
-      // Continuous subpixel progress line (glides at 60fps/120fps without discrete percent jumping)
       const continuousPercent = Math.min(100, ease * 100);
+
       if (lineRef.current) {
         lineRef.current.style.width = `${continuousPercent.toFixed(2)}%`;
       }
 
-      // Counter and phase updates throttled to integer transitions
       const current = Math.min(100, Math.floor(continuousPercent));
       if (current !== lastIntVal) {
         lastIntVal = current;
@@ -340,17 +349,26 @@ export default function BrandOrbLoader({
       if (t < 1) {
         frameId = requestAnimationFrame(step);
       } else {
-        if (!completedFired.current) {
-          completedFired.current = true;
-          setTimeout(() => {
-            onCompleteRef.current?.();
-          }, 350);
-        }
+        triggerComplete();
       }
     };
 
     frameId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frameId);
+
+    // Instant skip on interaction
+    const handleFastForward = () => triggerComplete();
+    window.addEventListener("click", handleFastForward, { once: true });
+    window.addEventListener("keydown", handleFastForward, { once: true });
+    window.addEventListener("wheel", handleFastForward, { once: true, passive: true });
+    window.addEventListener("touchstart", handleFastForward, { once: true, passive: true });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("click", handleFastForward);
+      window.removeEventListener("keydown", handleFastForward);
+      window.removeEventListener("wheel", handleFastForward);
+      window.removeEventListener("touchstart", handleFastForward);
+    };
   }, []);
 
   return (
