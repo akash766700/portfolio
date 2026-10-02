@@ -52,23 +52,39 @@ export function SylvaLivingWorldScene({
   }, [startScan, ready]);
 
   useEffect(() => {
+    let frameId: number | null = null;
+    let pendingX = 0;
+    let pendingY = 0;
+
     const handlePointerMove = (e: PointerEvent) => {
       const iframe = iframeRef.current;
       if (!iframe || !iframe.contentWindow) return;
       const rect = iframe.getBoundingClientRect();
-      const clientX = e.clientX - rect.left;
-      const clientY = e.clientY - rect.top;
-      iframe.contentWindow.postMessage(
-        {
-          type: "SYLVA_POINTER_MOVE",
-          clientX,
-          clientY,
-        },
-        "*"
-      );
+      pendingX = e.clientX - rect.left;
+      pendingY = e.clientY - rect.top;
+
+      if (frameId === null) {
+        frameId = requestAnimationFrame(() => {
+          frameId = null;
+          if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage(
+              {
+                type: "SYLVA_POINTER_MOVE",
+                clientX: pendingX,
+                clientY: pendingY,
+              },
+              "*"
+            );
+          }
+        });
+      }
     };
 
     const handlePointerLeave = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+        frameId = null;
+      }
       const iframe = iframeRef.current;
       if (!iframe || !iframe.contentWindow) return;
       iframe.contentWindow.postMessage({ type: "SYLVA_POINTER_LEAVE" }, "*");
@@ -77,6 +93,7 @@ export function SylvaLivingWorldScene({
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("pointerleave", handlePointerLeave);
     return () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerleave", handlePointerLeave);
     };
@@ -103,7 +120,7 @@ export function SylvaLivingWorldScene({
       <iframe
         ref={iframeRef}
         title={label}
-        src="/sylva/sylva-scene.html?v=v3"
+        src="/sylva/sylva-scene.html?v=v5"
         sandbox="allow-scripts allow-same-origin"
         loading="eager"
         onLoad={() => setReady(true)}

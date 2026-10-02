@@ -9,6 +9,9 @@ import HeroSparkles from "./HeroSparkles";
 import { SylvaLivingWorldScene } from "@designcodeio/threeui";
 import "@designcodeio/threeui/style.css";
 import { gsap, ScrollTrigger } from "@/utils/gsap";
+import TechText from "@/components/reactbits/TechText";
+import StrokeText from "@/components/reactbits/StrokeText";
+import { scienceGothic, waterfall } from "@/utils/font";
 
 export type IntroStage =
   | "loader"
@@ -100,7 +103,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
     setStage("spider-zoom");
     setTimeout(() => {
       setLoaderMounted(false);
-    }, 400);
+    }, 900);
   };
 
   const isLoader = stage === "loader";
@@ -119,8 +122,6 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
       setSylvaVisible(false);
     }
   }, [stage]);
-
-
 
   if (!isMounted) {
     return (
@@ -179,45 +180,58 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         </Box>
       )}
 
-      {/* ── 0. Sylva Living World Procedural Three.js Scene ── */}
+      {/* ── Cinematic Depth Scrim (Background behind Text) ── */}
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          backgroundColor: "rgba(4, 5, 8, 0.44)",
+          background: `
+            /* Deep shadow pocket directly behind spider to maximize foreground separation */
+            radial-gradient(60% 55% at 74% 48%, rgba(4, 5, 8, 0.56) 0%, rgba(4, 5, 8, 0.25) 60%, transparent 85%),
+            /* Top navbar fade */
+            linear-gradient(180deg, rgba(7, 8, 10, 0.85) 0%, transparent 28%),
+            /* Bottom transition */
+            linear-gradient(0deg, #07080A 0%, rgba(7, 8, 10, 0.72) 15%, transparent 35%)
+          `,
+        }}
+      />
+
+      {/* ── 0. Sylva Living World Procedural Three.js Scene (zIndex 2: In Front of Text) ── */}
       <Box
         ref={sylvaWrapRef}
         sx={{
           position: "absolute",
           inset: 0,
-          zIndex: 0,
+          zIndex: 2,
           overflow: "hidden",
-          opacity: (stage === "hero-settle" && sylvaVisible) ? 1 : 0,
-          visibility: (stage === "hero-settle" && sylvaVisible) ? "visible" : "hidden",
-          pointerEvents: (stage === "hero-settle" && sylvaVisible) ? "auto" : "none",
-          transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s ease",
+          opacity: stage === "hero-settle" && sylvaVisible ? 1 : 0,
+          visibility:
+            stage === "hero-settle" && sylvaVisible ? "visible" : "hidden",
+          pointerEvents:
+            stage === "hero-settle" && sylvaVisible ? "auto" : "none",
+          transition:
+            "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s ease",
+          willChange: "opacity",
         }}
       >
-        <div className="shader-frame" style={{ width: "100%", height: "100%", position: "relative" }}>
+        <div
+          className="shader-frame"
+          style={{ width: "100%", height: "100%", position: "relative" }}
+        >
           <SylvaLivingWorldScene
             variant="living-green"
             startScan={stage === "hero-settle" && sylvaVisible}
-            style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
+            style={{
+              width: "100%",
+              height: "100%",
+              position: "absolute",
+              inset: 0,
+            }}
           />
         </div>
-
-        {/* ── Cinematic Depth Scrim (Darkens background to make Spider pop like a centerpiece) ── */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            backgroundColor: "rgba(4, 5, 8, 0.44)",
-            background: `
-              /* Deep shadow pocket directly behind spider to maximize foreground separation */
-              radial-gradient(60% 55% at 74% 48%, rgba(4, 5, 8, 0.56) 0%, rgba(4, 5, 8, 0.25) 60%, transparent 85%),
-              /* Top navbar fade */
-              linear-gradient(180deg, rgba(7, 8, 10, 0.85) 0%, transparent 28%),
-              /* Bottom transition */
-              linear-gradient(0deg, #07080A 0%, rgba(7, 8, 10, 0.72) 15%, transparent 35%)
-            `,
-          }}
-        />
       </Box>
 
       {/* ── Ambient Lighting Floor & Atmospheric Dual Spotlights ── */}
@@ -246,26 +260,6 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
 
       {/* ── Full-Hero Floating Cyber Dust Sparkles (Mesmerizing Ambient Stardust) ── */}
       {isHeroVisible && <HeroSparkles />}
-
-      {/* ── Architectural Grid Line Guides (Subtle) ── */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 1,
-          display: "flex",
-          justifyContent: "space-around",
-          opacity: isHeroVisible ? 0.045 : 0,
-          transition: "opacity 1.4s ease 0.4s",
-        }}
-      >
-        <Box sx={{ width: "1px", height: "100%", background: "#FFFFFF" }} />
-        <Box sx={{ width: "1px", height: "100%", background: "#FFFFFF" }} />
-        <Box sx={{ width: "1px", height: "100%", background: "#FFFFFF" }} />
-        <Box sx={{ width: "1px", height: "100%", background: "#FFFFFF" }} />
-      </Box>
-
 
       {/* ── CINEMATIC FULLSCREEN SPIDER INTRO (Immediate Slow-Mo Fall & Recede into Cosmos) ── */}
       {stage === "spider-zoom" && (
@@ -328,6 +322,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
               border: "1px dashed rgba(97, 218, 251, 0.35)",
               animation: "portalRingRotate 22s linear infinite",
               pointerEvents: "none",
+              willChange: "transform",
               opacity: stage === "spider-zoom" ? 0.75 : 0.15,
               transition: "opacity 1s ease",
               "@keyframes portalRingRotate": {
@@ -346,6 +341,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
               border: "1px solid rgba(206, 242, 168, 0.18)",
               animation: "portalRingRotateReverse 28s linear infinite",
               pointerEvents: "none",
+              willChange: "transform",
               opacity: stage === "spider-zoom" ? 0.55 : 0.1,
               transition: "opacity 1s ease",
               "@keyframes portalRingRotateReverse": {
@@ -365,6 +361,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
               borderRadius: "50%",
               border: "1.5px solid rgba(97, 218, 251, 0.4)",
               pointerEvents: "none",
+              willChange: "transform, opacity",
               animation:
                 stage === "spider-zoom"
                   ? "warpExpand 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite"
@@ -393,7 +390,8 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
             pointerEvents: "none",
             background:
               "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.95) 0%, rgba(97, 218, 251, 0.65) 20%, rgba(97, 218, 251, 0.15) 50%, transparent 75%)",
-            animation: "quantumFlashAnim 0.42s cubic-bezier(0.12, 0.8, 0.32, 1) forwards",
+            animation:
+              "quantumFlashAnim 0.42s cubic-bezier(0.12, 0.8, 0.32, 1) forwards",
             "@keyframes quantumFlashAnim": {
               "0%": { opacity: 0, transform: "scale(0.85)" },
               "35%": { opacity: 1, transform: "scale(1.08)" },
@@ -403,19 +401,19 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         />
       )}
 
-      {/* ── MAIN CONTAINER (Hero Content & Dropping Spider) ── */}
+      {/* ── MAIN CONTAINER (Hero Content: Behind Sylva Mountain at zIndex 1) ── */}
       <Container
         ref={contentWrapRef}
         maxWidth="xl"
         sx={{
           position: "relative",
-          zIndex: 4,
+          zIndex: 1,
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          pt: { xs: 10, md: 0 },
-          pb: { xs: 6, md: 0 },
+          pt: { xs: 8, md: 0 },
+          pb: { xs: 4, md: 0 },
           opacity: isHeroSettle ? 1 : 0,
           transition: "opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
           pointerEvents: "none",
@@ -424,127 +422,167 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1.1fr 0.9fr" },
+            gridTemplateColumns: { xs: "1fr", md: "1.2fr 0.8fr" },
             alignItems: "center",
-            gap: { xs: 4, md: 6 },
+            gap: { xs: 3, md: 5 },
             width: "100%",
             minHeight: { xs: "auto", md: "85vh" },
           }}
         >
-          {/* ════════════ LEFT COLUMN: Copy & CTA ════════════ */}
+          {/* ════════════ LEFT COLUMN: Option 3 Refined Masterpiece Typography ════════════ */}
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: 2.4,
-              zIndex: 4,
+              zIndex: 1,
               gridColumn: { xs: "1", md: "1" },
-              maxWidth: { xs: "100%", md: 540, lg: 620 },
+              maxWidth: { xs: "100%", md: 740, lg: 880, xl: 960 },
+              mt: { xs: -4, sm: -6, md: -10, lg: -13, xl: -15 },
+              ml: { xs: 0, sm: -2, md: -6, lg: -9, xl: -12 },
               opacity: isHeroSettle ? 1 : 0,
               transform: isHeroSettle ? "none" : "translateY(24px)",
               transition:
                 "opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)",
               pointerEvents: isHeroSettle ? "auto" : "none",
+              willChange: "opacity, transform",
             }}
           >
-            {/* ════ Elegant Calligraphy Greeting & Minimal Modern Typography ════ */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-              {/* Handwritten Greeting in Waterfall */}
-              <Typography
-                component="span"
-                sx={{
-                  fontFamily: "var(--font-waterfall), cursive",
-                  fontSize: { xs: "3.2rem", sm: "4.2rem", md: "5rem" },
-                  fontWeight: 400,
-                  color: "#CEF2A8",
-                  lineHeight: 1,
-                  letterSpacing: "0.02em",
-                  textShadow: "0 0 30px rgba(206, 242, 168, 0.4)",
-                  transform: "rotate(-2deg)",
-                  transformOrigin: "left bottom",
-                  mb: { xs: -0.5, md: -1 },
-                  userSelect: "none",
-                }}
-              >
-                Hey, I&apos;m
-              </Typography>
-
-              {/* Bold Futuristic Name in Titillium Web */}
-              <Typography
-                variant="h1"
-                sx={{
-                  fontFamily: "var(--font-titillium-web), sans-serif",
-                  fontSize: { xs: "3.2rem", sm: "4.4rem", md: "5.4rem" },
-                  fontWeight: 800,
-                  lineHeight: 1.05,
-                  letterSpacing: "-0.03em",
-                  background: "linear-gradient(135deg, #FFFFFF 40%, #61DAFB 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  filter: "drop-shadow(0 0 35px rgba(97, 218, 251, 0.3))",
-                }}
-              >
-                Akash Gupta
-              </Typography>
-            </Box>
-
-            {/* Subtle Live Badge & Role */}
+            {/* ── 1. Stroke Text Animation in Waterfall: "Hello, World! I'm" ── */}
             <Box
               sx={{
+                position: "relative",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 1.4,
-                px: 1.8,
-                py: 0.7,
                 width: "fit-content",
-                borderRadius: "999px",
-                background: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                backdropFilter: "blur(12px)",
+                maxWidth: { xs: 320, sm: 380, md: 480 },
+                mb: { xs: 0.2, md: 0.4 },
+                userSelect: "none",
+                transform: "rotate(-2deg)",
+                transformOrigin: "left center",
               }}
             >
-              <Box
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  backgroundColor: "#61DAFB",
-                  boxShadow: "0 0 10px #61DAFB",
-                  animation: "pulseAura 2s ease-in-out infinite",
-                  "@keyframes pulseAura": {
-                    "0%, 100%": { transform: "scale(1)", opacity: 1 },
-                    "50%": { transform: "scale(1.25)", opacity: 0.6 },
-                  },
-                }}
+              <StrokeText
+                key={isHeroSettle ? "settled" : "pending"}
+                play={isHeroSettle}
+                replayOnHover={true}
+                text="Hello, World! I'm"
+                fontFamily={waterfall.style.fontFamily}
+                fontSize={54}
+                fontWeight={400}
+                letterSpacing={2}
+                strokeColor="#CEF2A8"
+                fillColor="#CEF2A8"
+                strokeWidth={1.2}
+                drawDuration={3.6}
+                stagger={0.11}
+                fillDelay={0.45}
+                fillMode="wipe"
+                trigger="mount"
               />
-              <Typography
-                sx={{
-                  fontSize: { xs: "0.78rem", sm: "0.85rem" },
-                  fontWeight: 600,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "rgba(255, 255, 255, 0.85)",
-                  fontFamily: "var(--font-titillium-web), sans-serif",
-                }}
-              >
-                Frontend Developer &amp; Creative Engineer
-              </Typography>
             </Box>
 
-            {/* Minimal Clean Bio */}
-            <Typography
+            {/* ── 2. Decrypted Entrance & Persistent Tech Text: "Akash Gupta." ── */}
+            <Box
               sx={{
-                fontSize: { xs: "0.95rem", md: "1.05rem" },
-                lineHeight: 1.65,
-                color: "rgba(255, 255, 255, 0.62)",
-                maxWidth: 440,
-                fontWeight: 300,
-                fontFamily: "var(--font-geist-sans), sans-serif",
+                position: "relative",
+                width: "100%",
+                maxWidth: { xs: "100%", sm: 620, md: 760, lg: 880, xl: 980 },
+                height: { xs: 75, sm: 90, md: 105, lg: 118, xl: 126 },
+                mt: { xs: 0.3, md: 0.5 },
+                userSelect: "none",
+                fontFamily: scienceGothic.style.fontFamily,
               }}
             >
-              Crafting fast, living, and interactive 3D web experiences with modern React &amp; Next.js architecture.
-            </Typography>
+              {/* Volumetric Starlight Core Glow behind Name */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "25%",
+                  width: "75%",
+                  height: "110%",
+                  transform: "translate(-25%, -50%)",
+                  background:
+                    "radial-gradient(ellipse at center, rgba(97, 218, 251, 0.22) 0%, rgba(56, 189, 248, 0.08) 50%, transparent 75%)",
+                  filter: "blur(40px)",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }}
+              />
+
+              {/* Single Unified TechText with Decrypted Entrance & Moving Liquid Gradient */}
+              <TechText
+                key={isHeroSettle ? "settled" : "pending"}
+                play={isHeroSettle}
+                decryptEntrance={true}
+                decryptSpeed={240}
+                text="Akash Gupta."
+                fontFamily={scienceGothic.style.fontFamily}
+                fontWeight={800}
+                fontSize={108}
+                letterSpacing={-0.03}
+                animatedGradient={true}
+                color="#FFFFFF"
+                accentColor="#61DAFB"
+                reach={220}
+                softness={0.7}
+                dashLength={4}
+                dashGap={2}
+                strokeWidth={1.5}
+                lineStyle="dashed"
+                reveal="letter"
+                specks={15}
+                selection={true}
+                labels={true}
+                draggable={true}
+                sweep={true}
+                speed={0.3}
+                align="left"
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                }}
+              />
             </Box>
+
+            {/* ── 3. Core Philosophy & Creative Statement in Waterfall Cursive with StrokeText Animation ── */}
+            <Box
+              sx={{
+                position: "relative",
+                mt: { xs: 1.0, sm: 1.4, md: 1.8, lg: 2.2 },
+                width: "fit-content",
+                maxWidth: "none",
+                display: "inline-block",
+                userSelect: "none",
+                filter: "drop-shadow(0 0 12px rgba(255, 255, 255, 0.15))",
+              }}
+            >
+              <StrokeText
+                key={isHeroSettle ? "statement-settled" : "statement-pending"}
+                play={isHeroSettle}
+                replayOnHover={true}
+                text="Turning imagination into interfaces, and ideas into experiences."
+                fontFamily={waterfall.style.fontFamily}
+                fontSize={38}
+                fontWeight={400}
+                letterSpacing={1.2}
+                strokeColor="rgba(255, 255, 255, 0.9)"
+                fillColor="rgba(255, 255, 255, 0.9)"
+                highlightWords={{
+                  interfaces: "#61DAFB",
+                  experiences: "#CEF2A8",
+                }}
+                strokeWidth={1.1}
+                drawDuration={2.6}
+                stagger={0.035}
+                fillDelay={0.35}
+                fillMode="wipe"
+                align="left"
+                trigger="mount"
+              />
+            </Box>
+          </Box>
 
           {/* ════════════ RIGHT COLUMN SPACER ON DESKTOP ════════════ */}
           <Box
@@ -573,7 +611,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
           justifyContent: "center",
           zIndex: isIntroPhase ? (isLoader ? 10 : 80) : 5,
           pointerEvents: isHeroSettle ? "auto" : "none",
-          transition: "left 0.6s cubic-bezier(0.16, 1, 0.3, 1), width 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+          willChange: "transform, opacity",
         }}
       >
         {/* Ambient Radial Spotlight behind settled spider */}
@@ -595,11 +633,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         {/* Persistent 3D Spider Canvas */}
         <SpiderHeroScene
           stage={
-            isLoader
-              ? "loader"
-              : stage === "spider-zoom"
-              ? "huge"
-              : "hero"
+            isLoader ? "loader" : stage === "spider-zoom" ? "huge" : "hero"
           }
           dropFromTop={stage === "spider-drop" || stage === "hero-settle"}
         />

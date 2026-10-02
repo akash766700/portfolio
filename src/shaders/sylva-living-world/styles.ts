@@ -29,6 +29,9 @@ body {
   pointer-events: auto !important;
   opacity: 1 !important;
 }
+.guides, .guides * {
+  display: none !important;
+}
 </style>`;
 
 export const SAKURA_SUNSET_STYLE = `<style data-threeui-sylva-sakura-sunset>

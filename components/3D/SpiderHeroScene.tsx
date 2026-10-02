@@ -426,11 +426,11 @@ function SpiderModel({
         if (child.material.transparent) {
           child.material.depthWrite = true;
         }
-        // Ultra-crisp 16x anisotropic filtering for crystal/metallic facets
+        // Ultra-crisp 4x anisotropic filtering for crystal/metallic facets (zero bandwidth stalls)
         ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap"].forEach(
           (key) => {
             if (child.material[key]) {
-              child.material[key].anisotropy = 16;
+              child.material[key].anisotropy = 4;
               child.material[key].minFilter = THREE.LinearMipmapLinearFilter;
               child.material[key].generateMipmaps = true;
               child.material[key].needsUpdate = true;
@@ -955,12 +955,14 @@ export default function SpiderHeroScene({
       <Suspense fallback={null}>
         <Canvas
           camera={{ position: [0, 1.05, 4.4], fov: 48 }}
-          dpr={[2, 3]}
+          dpr={[1, 1.8]}
           gl={{
             antialias: true,
             alpha: true,
             powerPreference: "high-performance",
             precision: "highp",
+            stencil: false,
+            depth: true,
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 1.45,
           }}
@@ -973,11 +975,6 @@ export default function SpiderHeroScene({
           <ambientLight intensity={1.5} />
           {/* Top key light */}
           <directionalLight position={[4, 8, 4]} intensity={2.9} />
-          {/* Sapphire Blue rim light to accent the back crystals */}
-          <pointLight position={[-4, 3, -3]} intensity={3.5} color="#00B0FF" />
-          {/* Warm gold / champagne accent light to enrich brass legs & molten core */}
-          <pointLight position={[3, -2, 2]} intensity={2.2} color="#FFD54F" />
-          <pointLight position={[0, 4, 3]} intensity={1.4} color="#FFFFFF" />
 
           {/* Dynamic Orbiting Prism Light for Shimmering Crystal Glints */}
           <DynamicPrismLight />

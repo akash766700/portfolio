@@ -35,44 +35,38 @@
 
   *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
 
-  html{ background:transparent !important; }
-  body{ background:transparent !important; }
-  .knob-float, .knob, .knob--about, .dock-wrap, .dock, .headline, .card, .lede, .pill-clip, .pill, .liquid-stage, .play-wrap, .scroll { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
-  body{
-    font-family:'Lexend',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    font-weight:300;
-    color:var(--ink);
-    background:#383b34;
-    overflow-x:hidden;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
+  html, body {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+  .knob-float, .knob, .knob--about, .dock-wrap, .dock, .headline, .card, .lede, .pill-clip, .pill, .liquid-stage, .play-wrap, .scroll, .guides, .guides *, .guides i, .ghost {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  body {
+    font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 300;
+    color: var(--ink);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* ── hero shell ──────────────────────────────────────────────────────── */
-  .hero{
-    position:relative;
-    width:100%;
-    height:100svh;
-    min-height:calc(880 * var(--u));
-    overflow:hidden;
-    isolation:isolate;
-    /* the reference screen reads a near-flat #4a4d44 corner to corner —
-       all the modelling comes from the light pool the root sits in */
-    background:
-      radial-gradient(64% 52% at 27% 84%, rgba(97,218,251,.085) 0%, rgba(97,218,251,0) 72%),
-      radial-gradient(70% 60% at 92% 8%,  rgba(10,18,28,.10) 0%, rgba(10,18,28,0) 68%),
-      transparent;
+  /* ── hero shell (100% transparent to let background & text show through) ── */
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 100svh;
+    min-height: calc(880 * var(--u));
+    overflow: hidden;
+    isolation: isolate;
+    background: transparent !important;
+    background-color: transparent !important;
   }
-  /* The floor of light the root stands in. Sampled off the reference: the
-     background climbs from 73 luma at the nav to ~128 at y 850, brightest
-     around the middle of the bottom edge. */
-  .hero::after{
-    content:'';
-    position:absolute; inset:0;
-    background:
-      radial-gradient(72% 44% at 50% 117%, rgba(238,243,231,.50) 0%, rgba(238,243,231,.21) 42%, rgba(238,243,231,.04) 72%, rgba(238,243,231,0) 88%),
-      linear-gradient(180deg, rgba(238,243,231,0) 54%, rgba(238,243,231,.03) 78%, rgba(238,243,231,.085) 100%);
-    pointer-events:none; z-index:0;
+  .hero::after {
+    display: none !important;
   }
 
   /* The whole composition lives on a centred 1600 × 880 stage.
@@ -713,8 +707,10 @@
   }
 </style>
 <style>
-.dock-wrap, .headline, .lede, .pill-clip, .play-wrap, .stat, .card, .scroll, .ghost, .knob-float, .knob, .knob--about {
+.dock-wrap, .headline, .lede, .pill-clip, .play-wrap, .stat, .card, .scroll, .ghost, .knob-float, .knob, .knob--about, .guides, .guides *, .guides i {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 html, body {
   background: transparent !important;
@@ -772,11 +768,6 @@ html, body {
 
   <div class="stage" id="stage">
 
-    <div class="guides fade" style="--d:900ms" aria-hidden="true">
-      <i style="left:calc(405 * var(--u))"></i>
-      <i style="left:calc(748 * var(--u))"></i>
-      <i style="left:calc(1091 * var(--u))"></i>
-    </div>
 
     <div class="ghost fade" style="--d:1150ms" aria-hidden="true">SYLVA</div>
 

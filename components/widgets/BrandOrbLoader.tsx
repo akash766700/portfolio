@@ -277,7 +277,6 @@ function ReactAtomCanvas({ size = 145, isExiting = false }: { size?: number; isE
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        filter: "drop-shadow(0 0 25px rgba(97, 218, 251, 0.5))",
         pointerEvents: "none",
       }}
     >
