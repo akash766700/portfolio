@@ -11,16 +11,25 @@ const nextConfig: NextConfig = {
     });
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@designcodeio/threeui/style.css": path.resolve(process.cwd(), "src/shaders/threeui.css"),
-      "@designcodeio/threeui": path.resolve(process.cwd(), "src/shaders/sylva-living-world/SylvaLivingWorldScene"),
+      "@designcodeio/threeui/style.css": path.resolve(
+        process.cwd(),
+        "components/canvas/shaders/threeui.css",
+      ),
+      "@designcodeio/threeui": path.resolve(
+        process.cwd(),
+        "components/canvas/shaders/sylva-living-world/SylvaLivingWorldScene",
+      ),
     };
     return config;
   },
   turbopack: {
     resolveAlias: {
-      "@designcodeio/threeui/style.css": "./src/shaders/threeui.css",
-      "@designcodeio/threeui": "./src/shaders/sylva-living-world/SylvaLivingWorldScene",
+      "@designcodeio/threeui/style.css": "./components/canvas/shaders/threeui.css",
+      "@designcodeio/threeui":
+        "./components/canvas/shaders/sylva-living-world/SylvaLivingWorldScene",
     },
+
+
     rules: {
       "*.html": {
         loaders: ["raw-loader"],

@@ -20,8 +20,11 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@designcodeio/threeui": ["./src/shaders/sylva-living-world/SylvaLivingWorldScene"],
-      "@designcodeio/threeui/style.css": ["./src/shaders/threeui.css"]
+      "@designcodeio/threeui": [
+        "./components/canvas/shaders/sylva-living-world/SylvaLivingWorldScene"
+      ],
+      "@designcodeio/threeui/style.css": ["./components/canvas/shaders/threeui.css"]
+
     }
   },
   "include": [

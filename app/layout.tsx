@@ -1,37 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Syne, Space_Grotesk } from "next/font/google";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import theme from "@/theme";
-import { scienceGothic, smoochSans, titilliumWeb, waterfall } from "@/utils/font";
+import {
+  geistSans,
+  geistMono,
+  scienceGothic,
+  smoochSans,
+  titilliumWeb,
+  waterfall,
+} from "@/utils/font";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-  weight: ["700", "800"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
 export const metadata: Metadata = {
-  title: "Portfolio",
-  description: "Personal portfolio website",
+  title: "Akash Gupta — Creative Frontend Developer & 3D Web Experiences",
+  description:
+    "Portfolio of Akash Gupta, a Creative Frontend Developer crafting high-performance, responsive web interfaces, interactive 3D WebGL experiences, and modern web applications with React, Next.js, and TypeScript.",
+  keywords: [
+    "Akash Gupta",
+    "Frontend Developer",
+    "Creative Web Developer",
+    "3D Web Development",
+    "Next.js Portfolio",
+    "React",
+    "TypeScript",
+    "Three.js",
+    "WebGL",
+  ],
+  authors: [{ name: "Akash Gupta" }],
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -42,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} ${spaceGrotesk.variable} ${scienceGothic.variable} ${smoochSans.variable} ${titilliumWeb.variable} ${waterfall.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${scienceGothic.variable} ${smoochSans.variable} ${titilliumWeb.variable} ${waterfall.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -54,14 +51,8 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
-        <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            {children}
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        <AppRouterCacheProvider>{children}</AppRouterCacheProvider>
       </body>
     </html>
   );
 }
-
