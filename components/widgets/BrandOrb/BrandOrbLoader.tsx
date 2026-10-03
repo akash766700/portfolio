@@ -32,7 +32,7 @@ export default function BrandOrbLoader({
     const triggerComplete = () => {
       if (completedFired.current) return;
       completedFired.current = true;
-      if (lineRef.current) lineRef.current.style.width = "100%";
+      if (lineRef.current) lineRef.current.style.transform = "scaleX(1)";
       if (counterRef.current) counterRef.current.textContent = "100";
       setTimeout(() => {
         onCompleteRef.current?.();
@@ -50,7 +50,7 @@ export default function BrandOrbLoader({
       const continuousPercent = Math.min(100, ease * 100);
 
       if (lineRef.current) {
-        lineRef.current.style.width = `${continuousPercent.toFixed(2)}%`;
+        lineRef.current.style.transform = `scaleX(${continuousPercent / 100})`;
       }
 
       const current = Math.min(100, Math.floor(continuousPercent));
@@ -142,7 +142,7 @@ export default function BrandOrbLoader({
           position: "absolute",
           bottom: 0,
           left: 0,
-          width: "0%",
+          width: "100%",
           height: "2.5px",
           zIndex: 10,
           background:
@@ -152,7 +152,9 @@ export default function BrandOrbLoader({
           opacity: isExiting ? 0 : 1,
           transition: "opacity 0.25s ease",
           pointerEvents: "none",
-          willChange: "width",
+          transform: "scaleX(0)",
+          transformOrigin: "left center",
+          willChange: "transform",
         }}
       >
         {/* Leading glowing laser head dot */}

@@ -5,8 +5,6 @@ import { Box, Typography, Container } from "@mui/material";
 import { Colors } from "@/utils/enum";
 import { SpiderHeroScene } from "@/components/canvas";
 import BrandOrbLoader from "@/components/widgets/BrandOrb/BrandOrbLoader";
-import HeroSparkles from "./HeroSparkles";
-import LiquidButton from "./LiquidButton";
 import PaperCard from "./PaperCard";
 import { SylvaLivingWorldScene } from "@designcodeio/threeui";
 import "@designcodeio/threeui/style.css";
@@ -89,7 +87,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
       // 3. Spider drops gracefully from top on silk thread and touches down in hero position
       const dropTimer = setTimeout(() => {
         setStage("hero-settle");
-      }, 1800);
+      }, 1500);
       return () => clearTimeout(dropTimer);
     }
   }, [stage]);
@@ -202,7 +200,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         }}
       />
 
-      {/* ── 0. Sylva Living World Procedural Three.js Scene (zIndex 2: In Front of Text) ── */}
+      {/* ── 0. Sylva Living World Procedural Three.js Scene (Pre-warmed in background, fades in seamlessly) ── */}
       <Box
         ref={sylvaWrapRef}
         sx={{
@@ -261,8 +259,6 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
         }}
       />
 
-      {/* ── Full-Hero Floating Cyber Dust Sparkles (Mesmerizing Ambient Stardust) ── */}
-      {isHeroVisible && <HeroSparkles />}
 
       {/* ── CINEMATIC FULLSCREEN SPIDER INTRO (Immediate Slow-Mo Fall & Recede into Cosmos) ── */}
       {stage === "spider-zoom" && (
@@ -585,18 +581,6 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
                 trigger="mount"
               />
             </Box>
-
-            {/* ── 4. Liquid CTA Action Button ── */}
-            <Box
-              sx={{
-                mt: { xs: 2.5, sm: 3, md: 3.5 },
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <LiquidButton label="Explore Works" href="#projects" />
-            </Box>
           </Box>
 
           {/* ════════════ RIGHT COLUMN SPACER ON DESKTOP ════════════ */}
@@ -638,8 +622,7 @@ export default function HeroSection({ onStageChange }: HeroSectionProps) {
               height: { xs: 260, md: 460 },
               borderRadius: "50%",
               background:
-                "radial-gradient(circle, rgba(97, 218, 251, 0.18) 0%, rgba(206, 242, 168, 0.06) 45%, transparent 75%)",
-              filter: "blur(40px)",
+                "radial-gradient(circle, rgba(97, 218, 251, 0.16) 0%, rgba(206, 242, 168, 0.04) 50%, transparent 75%)",
               pointerEvents: "none",
             }}
           />

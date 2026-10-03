@@ -55,11 +55,19 @@ export function SylvaLivingWorldScene({
     let frameId: number | null = null;
     let pendingX = 0;
     let pendingY = 0;
+    let cachedRect: DOMRect | null = null;
+    const updateRect = () => {
+      if (iframeRef.current) {
+        cachedRect = iframeRef.current.getBoundingClientRect();
+      }
+    };
+    updateRect();
 
     const handlePointerMove = (e: PointerEvent) => {
       const iframe = iframeRef.current;
       if (!iframe || !iframe.contentWindow) return;
-      const rect = iframe.getBoundingClientRect();
+      if (!cachedRect) updateRect();
+      const rect = cachedRect || { left: 0, top: 0 };
       pendingX = e.clientX - rect.left;
       pendingY = e.clientY - rect.top;
 
@@ -92,10 +100,12 @@ export function SylvaLivingWorldScene({
 
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("pointerleave", handlePointerLeave);
+    window.addEventListener("resize", updateRect, { passive: true });
     return () => {
       if (frameId !== null) cancelAnimationFrame(frameId);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerleave", handlePointerLeave);
+      window.removeEventListener("resize", updateRect);
     };
   }, []);
 

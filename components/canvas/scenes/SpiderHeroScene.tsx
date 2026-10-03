@@ -6,7 +6,6 @@ import {
   OrbitControls,
   useGLTF,
   Center,
-  Float,
   Environment,
   ContactShadows,
   Sparkles,
@@ -418,6 +417,9 @@ function SpiderModel({
   const spinAngle = useRef(0);
   const heroScale = useRef(BASE_SPIDER_SCALE);
   const legShineUniform = useRef({ value: 0 });
+  const dropProgressRef = useRef(0);
+  const prevModelStageRef = useRef(stage);
+  const smoothTimeRef = useRef(0);
 
   const clonedScene = useMemo(() => {
     const c = scene.clone(true);
@@ -662,9 +664,25 @@ function SpiderModel({
       groupRef.current.position.z = 0;
       groupRef.current.scale.setScalar(BASE_SPIDER_SCALE);
 
-      // Descend gracefully from ceiling (y: 4.8 -> 0)
-      if (yRef.current > 0.02) {
-        yRef.current = THREE.MathUtils.damp(yRef.current, 0, 1.12, delta);
+      if (prevModelStageRef.current !== "hero") {
+        dropProgressRef.current = 0;
+      }
+      prevModelStageRef.current = stage;
+
+      // ── Delta-smoothed continuous organic levitation (eliminates abrupt dead stops at peaks and troughs) ──
+      smoothTimeRef.current += Math.min(delta, 0.024);
+      const tHover = smoothTimeRef.current * 0.85;
+      const breathingHover = landedRef.current
+        ? Math.sin(tHover) * 0.025 + Math.sin(tHover * 0.5) * 0.007
+        : 0;
+
+      // Descend gracefully from ceiling (y: 4.8 -> 0) with smooth cubic ease-out
+      if (yRef.current > 0.001 && dropProgressRef.current < 1.0) {
+        dropProgressRef.current = Math.min(1.0, dropProgressRef.current + delta / 1.4);
+        const p = dropProgressRef.current;
+        // Cubic Ease-out for swift descent and buttery-soft touch-down
+        const ease = 1 - Math.pow(1 - p, 3);
+        yRef.current = 4.8 * (1 - ease);
 
         // Natural elastic spider sway as it hangs from the silk thread
         const swayAmp = Math.min(0.24, yRef.current * 0.06);
@@ -675,13 +693,18 @@ function SpiderModel({
         groupRef.current.rotation.y = 0;
         groupRef.current.rotation.x = 0;
 
-        if (yRef.current < 0.35 && !landedRef.current) {
+        if (p >= 0.92 && !landedRef.current) {
           landedRef.current = true;
         }
       } else {
         yRef.current = 0;
         landedRef.current = true;
-        xSwayRef.current = THREE.MathUtils.lerp(xSwayRef.current, 0, delta * 8);
+        groupRef.current.position.x = THREE.MathUtils.damp(
+          groupRef.current.position.x,
+          0,
+          6.0,
+          delta
+        );
 
         // ── 360° Acrobatic Spin Trick Motion ──
         if (isSpinningRef.current) {
@@ -711,21 +734,24 @@ function SpiderModel({
           groupRef.current.rotation.x = -sinP * 0.22; // predatory pounce tilt
           groupRef.current.rotation.z = 0;
         } else {
-          // Rest naturally in steady stance (no cursor following)
-          groupRef.current.rotation.y = THREE.MathUtils.lerp(
+          // Perfectly steady, calm resting stance (zero rotational jerk/wobble)
+          groupRef.current.rotation.y = THREE.MathUtils.damp(
             groupRef.current.rotation.y,
             0,
-            delta * 4.0
+            6.0,
+            delta
           );
-          groupRef.current.rotation.x = THREE.MathUtils.lerp(
+          groupRef.current.rotation.x = THREE.MathUtils.damp(
             groupRef.current.rotation.x,
             0,
-            delta * 4.0
+            6.0,
+            delta
           );
-          groupRef.current.rotation.z = THREE.MathUtils.lerp(
+          groupRef.current.rotation.z = THREE.MathUtils.damp(
             groupRef.current.rotation.z,
             0,
-            delta * 6.0
+            6.0,
+            delta
           );
         }
       }
@@ -748,12 +774,6 @@ function SpiderModel({
         const p = Math.min(1.0, spinProgressRef.current);
         spinHop = Math.sin(p * Math.PI) * 0.45;
       }
-
-      // Organic subtle breathing hover oscillation
-      const breathingHover =
-        yRef.current <= 0.02
-          ? Math.sin(state.clock.elapsedTime * 2.2) * 0.025
-          : 0;
 
       groupRef.current.position.y =
         yRef.current + clickJump + spinHop + breathingHover;
@@ -955,12 +975,12 @@ export default function SpiderHeroScene({
       <Suspense fallback={null}>
         <Canvas
           camera={{ position: [0, 1.05, 4.4], fov: 48 }}
-          dpr={[1, 1.8]}
+          dpr={[1, 1.25]}
           gl={{
             antialias: true,
             alpha: true,
             powerPreference: "high-performance",
-            precision: "highp",
+            precision: "mediump",
             stencil: false,
             depth: true,
             toneMapping: THREE.ACESFilmicToneMapping,
@@ -969,15 +989,19 @@ export default function SpiderHeroScene({
           style={{ width: "100%", height: "100%" }}
         >
           {/* Photorealistic IBL Environment reflections for crystal/metallic facets */}
-          <Environment preset="city" environmentIntensity={1.35} />
+          <Environment preset="city" environmentIntensity={1.4} />
 
-          {/* Ambient & Studio lighting for crystal reflections */}
+          {/* Main Key Studio Light */}
+          <directionalLight position={[4, 8, 4]} intensity={2.8} />
+          {/* Cyan Rim & Facet Glint Light */}
+          <directionalLight position={[-4, 4, -3]} intensity={2.0} color="#00E5FF" />
+          {/* Amber Under-Chassis Warm Bounce */}
+          <directionalLight position={[0, -3, 2]} intensity={1.4} color="#FFA726" />
+          {/* Soft Omni Ambient Fill */}
           <ambientLight intensity={1.5} />
-          {/* Top key light */}
-          <directionalLight position={[4, 8, 4]} intensity={2.9} />
 
-          {/* Dynamic Orbiting Prism Light for Shimmering Crystal Glints */}
-          <DynamicPrismLight />
+          {/* Crisp Specular Facet Highlight Light */}
+          <directionalLight position={[0, 6, 2]} intensity={1.8} color="#FFFFFF" />
 
           {/* Prominent Cyber Silk Web Thread while descending */}
           <CyberSilkThread
@@ -998,26 +1022,19 @@ export default function SpiderHeroScene({
           {/* Interactive 360 Spin Shockwave Rings */}
           <SpiderSpinShockwave spinPulseRef={spinPulseRef} />
 
-          {/* Unconditional Float wrapper: NEVER unmounts SpiderModel between stages */}
-          <Float
-            speed={1.4}
-            rotationIntensity={stage === "hero" && landedRef.current ? 0.04 : 0}
-            floatIntensity={stage === "hero" && landedRef.current ? 0.18 : 0}
-            floatingRange={[-0.02, 0.02]}
-          >
-            <SpiderModel
-              stage={stage}
-              mousePos={mousePos}
-              yRef={yRef}
-              xSwayRef={xSwayRef}
-              landedRef={landedRef}
-              clickPulseRef={clickPulseRef}
-              spinTrickRef={spinTrickRef}
-              spinPulseRef={spinPulseRef}
-              idleTimerRef={idleTimerRef}
-              isDraggingRef={isDraggingRef}
-            />
-          </Float>
+          {/* Spider Model */}
+          <SpiderModel
+            stage={stage}
+            mousePos={mousePos}
+            yRef={yRef}
+            xSwayRef={xSwayRef}
+            landedRef={landedRef}
+            clickPulseRef={clickPulseRef}
+            spinTrickRef={spinTrickRef}
+            spinPulseRef={spinPulseRef}
+            idleTimerRef={idleTimerRef}
+            isDraggingRef={isDraggingRef}
+          />
 
           {/* Glacial Diamond Ice & Stardust Sparkles */}
           <Sparkles
